@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState } from "react";
-import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -79,7 +79,18 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
 
   const renderItem = ({ item, drag, isActive }: RenderItemParams<PlanExercise>) => {
     const exercise = getExerciseById(item.exerciseId);
-    if (!exercise) return null;
+    if (!exercise) {
+      return (
+        <ScaleDecorator>
+          <View style={[styles.row, styles.missingRow]}>
+            <Text style={styles.missingText}>⚠️ Esercizio eliminato dalla libreria</Text>
+            <Pressable onPress={() => removeRow(item.id)} style={styles.removeBtn}>
+              <Text style={styles.removeBtnText}>Rimuovi dalla scheda</Text>
+            </Pressable>
+          </View>
+        </ScaleDecorator>
+      );
+    }
     return (
       <ScaleDecorator>
         <View style={[styles.row, isActive && styles.rowActive]}>
@@ -168,7 +179,11 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
         <View style={styles.nameSection}>
           <Text style={styles.fieldLabel}>Nome scheda</Text>
           <TextInput
@@ -213,7 +228,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
             </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </GestureHandlerRootView>
   );
 }
@@ -243,6 +258,8 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   rowActive: { opacity: 0.9, borderColor: colors.primary },
+  missingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderColor: colors.danger },
+  missingText: { color: colors.danger, flex: 1, fontSize: 13 },
   rowHeader: { flexDirection: "row", alignItems: "center" },
   rowHeaderMain: { flexDirection: "row", alignItems: "center", flex: 1 },
   thumb: { width: 44, height: 44, borderRadius: 8 },

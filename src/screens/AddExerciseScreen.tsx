@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -50,6 +52,11 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
   };
 
   return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
       <Text style={styles.label}>Nome esercizio</Text>
       <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Es. Squat" placeholderTextColor={colors.textMuted} />
@@ -124,6 +131,7 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
         <Text style={styles.saveBtnText}>{existing ? "Salva modifiche" : "Aggiungi esercizio"}</Text>
       </Pressable>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -5,7 +5,9 @@ import {
   AppStateStatus,
   BackHandler,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -13,6 +15,7 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { useKeepAwake } from "expo-keep-awake";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
@@ -29,10 +32,15 @@ import { HistoryExerciseLog } from "@/types";
 type Props = NativeStackScreenProps<PlansStackParamList, "WorkoutSession">;
 
 export default function WorkoutSessionScreen({ route, navigation }: Props) {
+  // Tiene lo schermo acceso per tutta la durata dell'allenamento: durante il riposo
+  // spesso non si tocca il telefono e senza questo lo schermo si spegnerebbe da solo.
+  useKeepAwake();
+
   const { planId } = route.params;
   const plan = usePlanStore((s) => s.getById(planId));
   const getExerciseById = useExerciseStore((s) => s.getById);
   const addHistoryEntry = useHistoryStore((s) => s.addEntry);
+  const getLastWeightForExercise = useHistoryStore((s) => s.getLastWeightForExercise);
 
   const active = useSessionStore((s) => s.active);
   const startWorkout = useSessionStore((s) => s.startWorkout);
@@ -92,6 +100,11 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const restTarget = currentEntry?.restSeconds ?? 60;
   const restRemaining = Math.max(0, restTarget - phaseElapsedSeconds);
   const currentLog = currentEntry ? active?.logs[currentEntry.id] : undefined;
+  // Peso da mostrare/suggerire: quello già inserito in questa sessione, altrimenti quello
+  // impostato nella scheda, altrimenti l'ultimo peso usato per questo esercizio nello storico.
+  const lastKnownWeight = currentEntry ? getLastWeightForExercise(currentEntry.exerciseId) : undefined;
+  const suggestedWeight = currentLog?.weight ?? currentEntry?.weight ?? lastKnownWeight;
+  const isWeightFromHistory = currentLog?.weight == null && currentEntry?.weight == null && lastKnownWeight != null;
 
   const finishWorkout = (skipConfirm = false) => {
     const doFinish = () => {
@@ -174,7 +187,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const openNoteModal = () => {
     if (!currentEntry) return;
     setNoteDraft(currentLog?.note ?? "");
-    setWeightDraft(currentLog?.weight != null ? String(currentLog.weight) : currentEntry.weight != null ? String(currentEntry.weight) : "");
+    setWeightDraft(suggestedWeight != null ? String(suggestedWeight) : "");
     setNoteModalVisible(true);
   };
 
@@ -212,8 +225,9 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
           <Text style={styles.exerciseName}>{currentExercise.name}</Text>
           <Text style={styles.setsReps}>
             {currentEntry?.sets ?? "-"} serie × {currentEntry?.reps ?? "-"} ripetizioni
-            {(currentLog?.weight ?? currentEntry?.weight) ? `  ·  ${currentLog?.weight ?? currentEntry?.weight} kg` : ""}
+            {suggestedWeight != null ? `  ·  ${suggestedWeight} kg` : ""}
           </Text>
+          {isWeightFromHistory && <Text style={styles.suggestedHint}>💡 Ultima volta: {suggestedWeight} kg</Text>}
           <View style={styles.actionRow}>
             <Pressable
               onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: currentExercise.id })}
@@ -224,6 +238,14 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
               <Text style={styles.noteBtnText}>{currentLog?.note ? "📝 Nota salvata" : "📝 Aggiungi nota / peso"}</Text>
             </Pressable>
           </View>
+        </View>
+      )}
+
+      {currentActive.phase === "exercise" && !currentExercise && (
+        <View style={styles.body}>
+          <Text style={styles.missingExerciseText}>
+            ⚠️ Questo esercizio è stato eliminato dalla libreria.{"\n"}Puoi comunque proseguire l'allenamento.
+          </Text>
         </View>
       )}
 
@@ -253,7 +275,11 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
       </View>
 
       <Modal visible={noteModalVisible} transparent animationType="fade" onRequestClose={() => setNoteModalVisible(false)}>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+        >
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{currentExercise?.name}</Text>
 
@@ -286,7 +312,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
               </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -302,6 +328,8 @@ const styles = StyleSheet.create({
   image: { width: 220, height: 220, borderRadius: 20, marginBottom: 20 },
   exerciseName: { color: colors.text, fontSize: 26, fontWeight: "700", textAlign: "center" },
   setsReps: { color: colors.textMuted, fontSize: 16, marginTop: 8 },
+  suggestedHint: { color: colors.warning, fontSize: 13, marginTop: 6, fontWeight: "600" },
+  missingExerciseText: { color: colors.danger, fontSize: 16, textAlign: "center", lineHeight: 24 },
   actionRow: { alignItems: "center", marginTop: 18, gap: 14 },
   infoLink: { color: colors.primary, fontWeight: "600" },
   noteBtn: {

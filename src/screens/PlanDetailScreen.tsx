@@ -61,7 +61,14 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
         }
         renderItem={({ item, index }) => {
           const exercise = getExerciseById(item.exerciseId);
-          if (!exercise) return null;
+          if (!exercise) {
+            return (
+              <View style={[styles.row, styles.missingRow]}>
+                <Text style={styles.rowIndex}>{index + 1}</Text>
+                <Text style={styles.missingText}>⚠️ Esercizio eliminato dalla libreria — rimuovilo da "Modifica"</Text>
+              </View>
+            );
+          }
           return (
             <Pressable
               style={styles.row}
@@ -112,6 +119,8 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   rowIndex: { color: colors.textMuted, fontWeight: "700", width: 22, textAlign: "center" },
+  missingRow: { borderColor: colors.danger },
+  missingText: { color: colors.danger, flex: 1, fontSize: 13 },
   thumb: { width: 56, height: 56, borderRadius: 10, marginRight: 12 },
   rowTitle: { color: colors.text, fontSize: 15, fontWeight: "600" },
   rowMeta: { color: colors.textMuted, fontSize: 13, marginTop: 3 },

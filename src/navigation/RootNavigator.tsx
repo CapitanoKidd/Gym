@@ -17,6 +17,7 @@ import WorkoutSessionScreen from "@/screens/WorkoutSessionScreen";
 import HistoryScreen from "@/screens/HistoryScreen";
 import HistoryDetailScreen from "@/screens/HistoryDetailScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
+import ExerciseProgressScreen from "@/screens/ExerciseProgressScreen";
 
 const ExercisesStack = createNativeStackNavigator<ExercisesStackParamList>();
 const PlansStack = createNativeStackNavigator<PlansStackParamList>();
@@ -36,6 +37,11 @@ function ExercisesStackNavigator() {
       <ExercisesStack.Screen name="ExercisesList" component={ExercisesScreen} options={{ title: "Esercizi" }} />
       <ExercisesStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} options={{ title: "Dettaglio" }} />
       <ExercisesStack.Screen name="AddExercise" component={AddExerciseScreen} options={{ title: "Esercizio" }} />
+      <ExercisesStack.Screen
+        name="ExerciseProgress"
+        component={ExerciseProgressScreen}
+        options={{ title: "Progressione" }}
+      />
     </ExercisesStack.Navigator>
   );
 }
@@ -48,6 +54,11 @@ function PlansStackNavigator() {
       <PlansStack.Screen name="PlanEditor" component={PlanEditorScreen} options={{ title: "Editor scheda" }} />
       <PlansStack.Screen name="ExercisePicker" component={ExercisePickerScreen} options={{ title: "Aggiungi esercizi" }} />
       <PlansStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} options={{ title: "Dettaglio" }} />
+      <PlansStack.Screen
+        name="ExerciseProgress"
+        component={ExerciseProgressScreen}
+        options={{ title: "Progressione" }}
+      />
       <PlansStack.Screen
         name="WorkoutSession"
         component={WorkoutSessionScreen}

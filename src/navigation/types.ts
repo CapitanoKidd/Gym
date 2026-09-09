@@ -2,6 +2,7 @@ export type ExercisesStackParamList = {
   ExercisesList: undefined;
   ExerciseDetail: { exerciseId: string };
   AddExercise: { exerciseId?: string } | undefined;
+  ExerciseProgress: { exerciseId: string };
 };
 
 export type PlansStackParamList = {
@@ -10,6 +11,7 @@ export type PlansStackParamList = {
   PlanEditor: { planId?: string };
   ExercisePicker: { onAdd: (exerciseId: string) => void; excludeIds?: string[] };
   ExerciseDetail: { exerciseId: string };
+  ExerciseProgress: { exerciseId: string };
   WorkoutSession: { planId: string };
 };
 

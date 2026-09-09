@@ -3,6 +3,7 @@ import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "rea
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ExercisesStackParamList } from "@/navigation/types";
 import { useExerciseStore } from "@/store/useExerciseStore";
+import { usePlanStore } from "@/store/usePlanStore";
 import { colors } from "@/theme";
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, "ExerciseDetail">;
@@ -11,6 +12,7 @@ export default function ExerciseDetailScreen({ route, navigation }: Props) {
   const { exerciseId } = route.params;
   const exercise = useExerciseStore((s) => s.getById(exerciseId));
   const deleteExercise = useExerciseStore((s) => s.deleteExercise);
+  const plans = usePlanStore((s) => s.plans);
 
   if (!exercise) {
     return (
@@ -20,8 +22,16 @@ export default function ExerciseDetailScreen({ route, navigation }: Props) {
     );
   }
 
+  const plansUsingIt = plans.filter((p) => p.exercises.some((e) => e.exerciseId === exercise.id));
+
   const confirmDelete = () => {
-    Alert.alert("Elimina esercizio", `Vuoi eliminare "${exercise.name}"?`, [
+    const usageWarning =
+      plansUsingIt.length > 0
+        ? `\n\nÈ usato in ${plansUsingIt.length} scheda${plansUsingIt.length > 1 ? "e" : ""} (${plansUsingIt
+            .map((p) => p.name)
+            .join(", ")}): in quelle schede l'esercizio risulterà "eliminato" e andrà rimosso a mano.`
+        : "";
+    Alert.alert("Elimina esercizio", `Vuoi eliminare "${exercise.name}"?${usageWarning}`, [
       { text: "Annulla", style: "cancel" },
       {
         text: "Elimina",
@@ -60,6 +70,13 @@ export default function ExerciseDetailScreen({ route, navigation }: Props) {
           </Text>
         ))}
 
+        <Pressable
+          style={styles.progressBtn}
+          onPress={() => navigation.navigate("ExerciseProgress", { exerciseId: exercise.id })}
+        >
+          <Text style={styles.progressBtnText}>📈 Vedi progressione peso</Text>
+        </Pressable>
+
         <View style={styles.actions}>
           <Pressable
             style={styles.editBtn}
@@ -96,7 +113,17 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "700", marginTop: 18, marginBottom: 6 },
   paragraph: { color: colors.textMuted, fontSize: 15, lineHeight: 22 },
   listItem: { color: colors.textMuted, fontSize: 15, lineHeight: 22 },
-  actions: { flexDirection: "row", gap: 12, marginTop: 28 },
+  progressBtn: {
+    marginTop: 24,
+    backgroundColor: colors.cardAlt,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  progressBtnText: { color: colors.primary, fontWeight: "700" },
+  actions: { flexDirection: "row", gap: 12, marginTop: 14 },
   editBtn: {
     flex: 1,
     backgroundColor: colors.cardAlt,
