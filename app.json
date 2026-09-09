@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "La Mia Palestra",
+    "slug": "la-mia-palestra",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.local.lamiapalestra"
+    },
+    "android": {
+      "package": "com.local.lamiapalestra",
+      "adaptiveIcon": {
+        "backgroundColor": "#111318"
+      },
+      "permissions": ["NOTIFICATIONS", "SCHEDULE_EXACT_ALARM"]
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
+      ]
+    ]
+  }
+}
