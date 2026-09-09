@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/theme";
 import { exportBackup, importBackup } from "@/utils/backup";
+import { isWorkoutReminderAvailable } from "@/utils/notifications";
 
 export default function SettingsScreen() {
   const [busy, setBusy] = useState(false);
@@ -63,6 +64,16 @@ export default function SettingsScreen() {
       <Pressable style={[styles.actionBtn, styles.dangerBtn]} disabled={busy} onPress={() => handleImport("replace")}>
         <Text style={[styles.actionBtnText, styles.dangerText]}>⚠️  Importa backup (sovrascrivi tutto)</Text>
       </Pressable>
+
+      {!isWorkoutReminderAvailable() && (
+        <View style={styles.noticeBox}>
+          <Text style={styles.noticeText}>
+            ℹ️ Il promemoria "allenamento in corso" (quando chiudi l'app durante una sessione) è disabilitato:
+            Expo Go su Android non supporta più le notifiche da SDK 53. Il resto dell'app funziona normalmente;
+            il promemoria tornerà attivo in una build reale (es. con `eas build` o `expo run:android`).
+          </Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -83,4 +94,13 @@ const styles = StyleSheet.create({
   actionBtnText: { color: colors.text, fontWeight: "600" },
   dangerBtn: { borderColor: colors.danger },
   dangerText: { color: colors.danger },
+  noticeBox: {
+    marginTop: 8,
+    backgroundColor: colors.cardAlt,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  noticeText: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },
 });
