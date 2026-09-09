@@ -2,8 +2,9 @@ import React, { useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ExercisesStackParamList } from "@/navigation/types";
-import { useExerciseStore, MUSCLE_GROUPS } from "@/store/useExerciseStore";
+import { useExerciseStore } from "@/store/useExerciseStore";
 import ExerciseCard from "@/components/ExerciseCard";
+import MuscleGroupFilter from "@/components/MuscleGroupFilter";
 import { colors } from "@/theme";
 import { searchExercises } from "@/utils/search";
 
@@ -28,24 +29,7 @@ export default function ExercisesScreen({ navigation }: Props) {
         onChangeText={setQuery}
         style={styles.search}
       />
-      <FlatList
-        data={["Tutti", ...MUSCLE_GROUPS]}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item}
-        contentContainerStyle={{ paddingVertical: 10, gap: 8 }}
-        renderItem={({ item }) => {
-          const selected = item === "Tutti" ? group === null : group === item;
-          return (
-            <Pressable
-              onPress={() => setGroup(item === "Tutti" ? null : item)}
-              style={[styles.chip, selected && styles.chipSelected]}
-            >
-              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{item}</Text>
-            </Pressable>
-          );
-        }}
-      />
+      <MuscleGroupFilter selected={group} onSelect={setGroup} />
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
@@ -76,17 +60,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { color: colors.textMuted, fontSize: 13 },
-  chipTextSelected: { color: "#fff", fontWeight: "600" },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 40 },
   fab: {
     position: "absolute",

@@ -1,15 +1,10 @@
 import { Exercise } from "@/types";
 
-// Immagini segnaposto (picsum, seed stabile per esercizio) — sostituibili in ogni momento
-// dalla schermata "Aggiungi esercizio" > modifica, incollando un altro URL.
-const img = (seed: string) => `https://picsum.photos/seed/${seed}/400/300`;
-
 export const SEED_EXERCISES: Exercise[] = [
   {
     id: "squat",
     name: "Squat con bilanciere",
     muscleGroup: "Gambe",
-    imageUrl: img("squat"),
     description:
       "In piedi, bilanciere sulla parte alta della schiena. Scendi piegando anche e ginocchia mantenendo la schiena dritta, come se ti sedessi su una sedia, poi risali spingendo sui talloni.",
     doList: [
@@ -29,7 +24,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "stacco",
     name: "Stacco da terra",
     muscleGroup: "Schiena",
-    imageUrl: img("deadlift"),
     description:
       "Bilanciere a terra, piedi larghezza bacino. Afferra il bilanciere, schiena dritta, e sollevalo estendendo anche e ginocchia contemporaneamente fino alla posizione eretta.",
     doList: [
@@ -49,7 +43,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "panca",
     name: "Panca piana con bilanciere",
     muscleGroup: "Petto",
-    imageUrl: img("benchpress"),
     description:
       "Sdraiato su panca, bilanciere sopra il petto con presa poco più larga delle spalle. Scendi controllando fino a sfiorare il petto, poi spingi verso l'alto.",
     doList: [
@@ -69,7 +62,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "trazioni",
     name: "Trazioni alla sbarra",
     muscleGroup: "Schiena",
-    imageUrl: img("pullup"),
     description:
       "Appeso alla sbarra con presa prona più larga delle spalle, tira il corpo verso l'alto fino a portare il mento sopra la sbarra, poi scendi controllando.",
     doList: [
@@ -88,7 +80,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "military-press",
     name: "Military Press",
     muscleGroup: "Spalle",
-    imageUrl: img("ohp"),
     description:
       "In piedi, bilanciere all'altezza delle clavicole. Spingi verticalmente sopra la testa fino a estensione completa delle braccia, poi torna alla posizione di partenza.",
     doList: [
@@ -106,7 +97,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "curl-bicipiti",
     name: "Curl bicipiti con bilanciere",
     muscleGroup: "Bicipiti",
-    imageUrl: img("curl"),
     description:
       "In piedi, bilanciere con presa supina larghezza spalle. Piega i gomiti sollevando il bilanciere verso il petto mantenendo i gomiti fermi lungo il busto.",
     doList: ["Mantieni i gomiti fissi ai fianchi", "Controlla la fase eccentrica"],
@@ -121,7 +111,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "french-press",
     name: "French Press",
     muscleGroup: "Tricipiti",
-    imageUrl: img("skullcrusher"),
     description:
       "Sdraiato su panca, bilanciere/manubri sopra il petto con braccia estese. Piega solo i gomiti abbassando il peso verso la fronte, poi estendi.",
     doList: ["Mantieni i gomiti puntati verso il soffitto e fermi", "Movimento controllato"],
@@ -133,7 +122,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "plank",
     name: "Plank",
     muscleGroup: "Addominali",
-    imageUrl: img("plank"),
     description:
       "Appoggio su avambracci e punte dei piedi, corpo allineato dalla testa ai talloni. Mantieni la posizione contraendo addome e glutei.",
     doList: ["Mantieni la linea testa-bacino-talloni dritta", "Respira normalmente"],
@@ -145,7 +133,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "hip-thrust",
     name: "Hip Thrust",
     muscleGroup: "Glutei",
-    imageUrl: img("hipthrust"),
     description:
       "Schiena appoggiata su panca, bilanciere sui fianchi. Spingi i fianchi verso l'alto contraendo i glutei fino a estensione completa dell'anca.",
     doList: ["Mento leggermente al petto", "Spingi sui talloni", "Contrai forte i glutei in alto"],
@@ -157,7 +144,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "affondi",
     name: "Affondi con manubri",
     muscleGroup: "Gambe",
-    imageUrl: img("lunges"),
     description:
       "In piedi con manubri ai lati, fai un passo avanti e scendi piegando entrambe le ginocchia a 90°, poi torna in piedi spingendo sul tallone anteriore.",
     doList: ["Busto eretto", "Ginocchio anteriore sopra la caviglia"],
@@ -169,7 +155,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "rematore",
     name: "Rematore con bilanciere",
     muscleGroup: "Schiena",
-    imageUrl: img("row"),
     description:
       "Busto inclinato in avanti circa 45°, bilanciere in mano con presa prona. Tira il bilanciere verso l'addome contraendo le scapole, poi ridiscendi controllato.",
     doList: ["Schiena piatta per tutto il movimento", "Tira con i gomiti, non con le mani"],
@@ -181,7 +166,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "leg-press",
     name: "Leg Press",
     muscleGroup: "Gambe",
-    imageUrl: img("legpress"),
     description:
       "Seduto sulla macchina, piedi larghezza spalle sulla pedana. Piega le ginocchia portando la pedana verso il petto, poi spingi in estensione senza bloccare le ginocchia.",
     doList: ["Mantieni la zona lombare aderente allo schienale", "Range di movimento controllato"],
@@ -193,7 +177,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "alzate-laterali",
     name: "Alzate laterali",
     muscleGroup: "Spalle",
-    imageUrl: img("lateralraise"),
     description:
       "In piedi con manubri ai lati, solleva le braccia lateralmente fino all'altezza delle spalle mantenendo un leggero angolo ai gomiti.",
     doList: ["Movimento lento e controllato", "Gomiti leggermente più alti dei polsi"],
@@ -205,7 +188,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "crunch",
     name: "Crunch",
     muscleGroup: "Addominali",
-    imageUrl: img("crunch"),
     description:
       "Sdraiato supino, ginocchia piegate. Solleva le scapole da terra contraendo gli addominali, senza tirare il collo con le mani.",
     doList: ["Concentrati sulla contrazione addominale", "Espira durante la salita"],
@@ -217,7 +199,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "corsa",
     name: "Corsa (tapis roulant / esterno)",
     muscleGroup: "Cardio",
-    imageUrl: img("running"),
     description:
       "Corsa a ritmo costante o ad intervalli per allenamento cardiovascolare.",
     doList: ["Mantieni una postura eretta", "Atterra con il piede sotto al bacino"],
@@ -229,7 +210,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "burpees",
     name: "Burpees",
     muscleGroup: "Full Body",
-    imageUrl: img("burpees"),
     description:
       "Da in piedi, accovacciati, porta le gambe indietro in plank, esegui un piegamento, riporta le gambe avanti e salta con le braccia sopra la testa.",
     doList: ["Mantieni il core attivo durante il plank", "Atterra morbido dal salto"],
@@ -241,7 +221,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "dips",
     name: "Dips alle parallele",
     muscleGroup: "Tricipiti",
-    imageUrl: img("dips"),
     description:
       "Sospeso sulle parallele con braccia estese, scendi piegando i gomiti fino a circa 90°, poi risali estendendo le braccia.",
     doList: ["Busto leggermente inclinato in avanti per più petto, verticale per più tricipiti", "Scendi controllato"],
@@ -253,7 +232,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "leg-curl",
     name: "Leg Curl (femorali)",
     muscleGroup: "Gambe",
-    imageUrl: img("legcurl"),
     description:
       "Sdraiato prono sulla macchina, piega le ginocchia portando il rullo verso i glutei, poi ridistendi controllato.",
     doList: ["Bacino ben aderente al supporto", "Movimento lento in fase eccentrica"],
@@ -265,7 +243,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "pulley",
     name: "Lat Machine (Pulldown)",
     muscleGroup: "Schiena",
-    imageUrl: img("latpulldown"),
     description:
       "Seduto alla macchina, presa larga sulla barra. Tira la barra verso l'alto del petto contraendo le scapole, poi risali controllato.",
     doList: ["Petto in fuori, leggera inclinazione indietro del busto", "Tira con la schiena, non solo con le braccia"],
@@ -277,7 +254,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "calf-raise",
     name: "Calf Raise (polpacci)",
     muscleGroup: "Gambe",
-    imageUrl: img("calfraise"),
     description:
       "In piedi, solleva i talloni da terra contraendo i polpacci il più possibile, poi scendi lentamente sotto il livello di partenza.",
     doList: ["Range di movimento completo", "Pausa in contrazione massima"],
@@ -289,7 +265,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "mountain-climber",
     name: "Mountain Climber",
     muscleGroup: "Full Body",
-    imageUrl: img("mountainclimber"),
     description:
       "In posizione di plank alto, porta alternativamente le ginocchia al petto in modo rapido e controllato.",
     doList: ["Mantieni il bacino stabile", "Core sempre attivo"],
@@ -301,7 +276,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "russian-twist",
     name: "Russian Twist",
     muscleGroup: "Addominali",
-    imageUrl: img("russiantwist"),
     description:
       "Seduto con busto inclinato indietro e piedi sollevati o a terra, ruota il busto portando le mani (o un peso) da un lato all'altro.",
     doList: ["Mantieni la schiena dritta, non curva", "Movimento controllato"],
@@ -313,7 +287,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "spinta-manubri-inclinata",
     name: "Panca inclinata con manubri",
     muscleGroup: "Petto",
-    imageUrl: img("inclinedumbbell"),
     description:
       "Sdraiato su panca inclinata 30-45°, manubri all'altezza del petto. Spingi verso l'alto estendendo le braccia, poi scendi controllato.",
     doList: ["Scapole retratte", "Traiettoria leggermente convergente in alto"],
@@ -325,7 +298,6 @@ export const SEED_EXERCISES: Exercise[] = [
     id: "flessioni",
     name: "Flessioni",
     muscleGroup: "Petto",
-    imageUrl: img("pushup"),
     description:
       "A terra in posizione di plank, mani leggermente più larghe delle spalle. Piega i gomiti abbassando il petto verso il pavimento, poi spingi per risalire.",
     doList: [
@@ -339,5 +311,336 @@ export const SEED_EXERCISES: Exercise[] = [
     ],
     isCustom: false,
     aliases: ["push up", "push-up", "pushup", "piegamenti sulle braccia", "piegamenti"],
+  },
+  // --- Aggiunti per ampliare la libreria ---
+  {
+    id: "croci-manubri",
+    name: "Croci con manubri",
+    muscleGroup: "Petto",
+    description:
+      "Sdraiato su panca piana, manubri sopra il petto con un leggero angolo ai gomiti. Apri le braccia lateralmente in un ampio arco fino a sentire lo stiramento del petto, poi richiudi.",
+    doList: ["Mantieni sempre lo stesso angolo ai gomiti", "Immagina di abbracciare un grosso tronco"],
+    dontList: ["Non estendere completamente i gomiti (rischio di infortunio)", "Non scendere oltre la linea delle spalle"],
+    isCustom: false,
+    aliases: ["croci", "dumbbell fly", "chest fly", "aperture con manubri"],
+  },
+  {
+    id: "chest-press-machine",
+    name: "Chest Press (macchina)",
+    muscleGroup: "Petto",
+    description:
+      "Seduto alla macchina, maniglie all'altezza del petto. Spingi in avanti fino a estensione quasi completa delle braccia, poi torna controllato.",
+    doList: ["Schiena e bacino ben aderenti allo schienale", "Movimento controllato in entrambe le fasi"],
+    dontList: ["Non bloccare i gomiti con forza a fine spinta", "Non sollevare la schiena dallo schienale"],
+    isCustom: false,
+    aliases: ["chest press", "pressa per petto", "distensioni alla macchina"],
+  },
+  {
+    id: "cavi-incrociati",
+    name: "Cavi incrociati (cable crossover)",
+    muscleGroup: "Petto",
+    description:
+      "In piedi al centro della macchina a cavi, un cavo per mano sopra la testa. Porta le mani verso il basso e al centro in un movimento ad arco, contraendo il petto.",
+    doList: ["Busto leggermente inclinato in avanti", "Contrazione di picco al centro del movimento"],
+    dontList: ["Non usare slancio con il busto", "Non estendere le braccia oltre la linea delle spalle in apertura"],
+    isCustom: false,
+    aliases: ["cable crossover", "croci ai cavi", "cavi petto"],
+  },
+  {
+    id: "panca-stretta",
+    name: "Panca stretta",
+    muscleGroup: "Tricipiti",
+    description:
+      "Come la panca piana ma con presa più stretta (larghezza spalle). Scendi controllato fino a sfiorare il petto, poi spingi enfatizzando i tricipiti.",
+    doList: ["Gomiti vicini al busto durante la discesa", "Presa non troppo stretta: larghezza spalle"],
+    dontList: ["Non allargare i gomiti come nella panca piana classica", "Non far rimbalzare il bilanciere sul petto"],
+    isCustom: false,
+    aliases: ["close grip bench press", "panca presa stretta"],
+  },
+  {
+    id: "rematore-manubrio",
+    name: "Rematore con manubrio",
+    muscleGroup: "Schiena",
+    description:
+      "Un ginocchio e una mano appoggiati alla panca, busto parallelo al pavimento. Tira il manubrio verso il fianco contraendo la scapola, poi ridiscendi controllato.",
+    doList: ["Mantieni la schiena piatta e parallela al pavimento", "Tira con il gomito, non con la mano"],
+    dontList: ["Non ruotare il busto per aiutarti", "Non usare slancio"],
+    isCustom: false,
+    aliases: ["one arm row", "rematore un braccio", "rematore manubrio"],
+  },
+  {
+    id: "pullover-manubrio",
+    name: "Pull-over con manubrio",
+    muscleGroup: "Schiena",
+    description:
+      "Sdraiato su panca (solo le spalle appoggiate), manubrio tenuto con entrambe le mani sopra il petto. Porta il manubrio indietro oltre la testa in un arco ampio, poi torna su.",
+    doList: ["Mantieni un leggero angolo ai gomiti per tutto il movimento", "Controlla soprattutto la fase di discesa"],
+    dontList: ["Non inarcare eccessivamente la schiena", "Non usare un carico eccessivo"],
+    isCustom: false,
+    aliases: ["pullover", "pull over", "dumbbell pullover"],
+  },
+  {
+    id: "iperestensioni",
+    name: "Iperestensioni",
+    muscleGroup: "Schiena",
+    description:
+      "Sulla panca per iperestensioni, bacino appoggiato e busto piegato in avanti. Solleva il busto fino ad allinearlo con le gambe, contraendo lombari e glutei.",
+    doList: ["Movimento controllato, senza scatti", "Contrai glutei e lombari in alto"],
+    dontList: ["Non iperestendere oltre la linea retta del corpo", "Non usare slancio per salire"],
+    isCustom: false,
+    aliases: ["hyperextensions", "estensioni lombari", "back extension"],
+  },
+  {
+    id: "stacco-rumeno",
+    name: "Stacco rumeno",
+    muscleGroup: "Gambe",
+    description:
+      "In piedi con bilanciere, gambe quasi tese. Spingi il bacino indietro facendo scendere il bilanciere lungo le gambe mantenendo la schiena dritta, fino a sentire lo stiramento dei femorali, poi risali.",
+    doList: ["Ginocchia con una leggerissima piega, non rigide", "Bilanciere sempre a contatto con le gambe"],
+    dontList: ["Non inarcare o curvare la schiena", "Non scendere oltre il punto in cui la schiena resta dritta"],
+    isCustom: false,
+    aliases: ["romanian deadlift", "rdl", "stacco gambe tese"],
+  },
+  {
+    id: "squat-goblet",
+    name: "Squat goblet",
+    muscleGroup: "Gambe",
+    description:
+      "In piedi, un manubrio o kettlebell tenuto con entrambe le mani davanti al petto. Scendi in squat mantenendo il busto eretto, poi risali.",
+    doList: ["Gomiti che sfiorano l'interno delle ginocchia in basso", "Busto il più eretto possibile"],
+    dontList: ["Non far cadere in avanti il peso", "Non sollevare i talloni"],
+    isCustom: false,
+    aliases: ["goblet squat"],
+  },
+  {
+    id: "affondi-bulgari",
+    name: "Affondi bulgari",
+    muscleGroup: "Gambe",
+    description:
+      "Piede posteriore appoggiato su una panca rialzata, piede anteriore avanti. Scendi piegando il ginocchio anteriore fino a quasi toccare terra col ginocchio posteriore, poi risali.",
+    doList: ["Busto leggermente inclinato in avanti", "Peso soprattutto sul tallone anteriore"],
+    dontList: ["Non far sporgere il ginocchio anteriore oltre la punta del piede in modo eccessivo"],
+    isCustom: false,
+    aliases: ["bulgarian split squat", "affondo bulgaro", "squat bulgaro"],
+  },
+  {
+    id: "abductor-machine",
+    name: "Adductor/Abductor machine",
+    muscleGroup: "Gambe",
+    description:
+      "Seduto alla macchina per adduttori/abduttori, gambe contro i cuscinetti. Apri o chiudi le gambe contro la resistenza in modo controllato.",
+    doList: ["Movimento lento e controllato", "Range di movimento completo senza forzare"],
+    dontList: ["Non usare slancio per spingere il carico"],
+    isCustom: false,
+    aliases: ["adduttori", "abduttori", "macchina interno coscia", "macchina esterno coscia"],
+  },
+  {
+    id: "arnold-press",
+    name: "Arnold Press",
+    muscleGroup: "Spalle",
+    description:
+      "Seduto, manubri davanti alle spalle con i palmi rivolti verso di te. Spingi verso l'alto ruotando i polsi fino a estensione completa con i palmi rivolti in avanti, poi torna giù ruotando di nuovo.",
+    doList: ["Movimento di rotazione fluido, non a scatti", "Controlla soprattutto la discesa"],
+    dontList: ["Non inarcare la schiena per completare la spinta"],
+    isCustom: false,
+    aliases: ["arnold press", "military press rotante"],
+  },
+  {
+    id: "alzate-frontali",
+    name: "Alzate frontali",
+    muscleGroup: "Spalle",
+    description:
+      "In piedi con manubri lungo i fianchi. Solleva le braccia in avanti fino all'altezza delle spalle, poi ridiscendi controllato.",
+    doList: ["Un leggero angolo ai gomiti per tutto il movimento", "Evita di sollevare oltre l'altezza delle spalle"],
+    dontList: ["Non usare slancio con la schiena", "Non salire troppo in alto sovraccaricando le cervicali"],
+    isCustom: false,
+    aliases: ["front raise", "alzate avanti"],
+  },
+  {
+    id: "alzate-posteriori",
+    name: "Alzate posteriori",
+    muscleGroup: "Spalle",
+    description:
+      "Busto inclinato in avanti, manubri sotto le spalle. Apri le braccia lateralmente contraendo i deltoidi posteriori, poi torna giù controllato.",
+    doList: ["Busto stabile e parallelo al pavimento", "Gomiti leggermente piegati e alti"],
+    dontList: ["Non usare slancio del busto per sollevare il peso"],
+    isCustom: false,
+    aliases: ["rear delt fly", "alzate posteriori manubri", "reverse fly"],
+  },
+  {
+    id: "scrollate",
+    name: "Scrollate (shrug)",
+    muscleGroup: "Spalle",
+    description:
+      "In piedi, bilanciere o manubri lungo i fianchi. Solleva le spalle verso le orecchie contraendo i trapezi, poi rilascia controllato.",
+    doList: ["Movimento verticale puro, senza rotazione delle spalle", "Contrazione di picco in alto"],
+    dontList: ["Non ruotare le spalle in circolo", "Non usare slancio delle gambe"],
+    isCustom: false,
+    aliases: ["shrug", "scrollate trapezi", "shoulder shrug"],
+  },
+  {
+    id: "curl-alternato",
+    name: "Curl manubri alternato",
+    muscleGroup: "Bicipiti",
+    description:
+      "In piedi, un manubrio per mano. Piega un gomito alla volta sollevando il manubrio verso la spalla, alternando i due lati.",
+    doList: ["Gomito fermo lungo il fianco", "Controlla la fase di discesa su ogni braccio"],
+    dontList: ["Non dondolare il busto per aiutarti"],
+    isCustom: false,
+    aliases: ["alternating dumbbell curl", "curl alternato manubri"],
+  },
+  {
+    id: "curl-martello",
+    name: "Curl a martello",
+    muscleGroup: "Bicipiti",
+    description:
+      "In piedi, manubri con presa neutra (palmi rivolti verso il corpo). Piega i gomiti sollevando i manubri mantenendo la presa neutra per tutto il movimento.",
+    doList: ["Mantieni i polsi neutri per tutto il movimento", "Gomiti fermi lungo i fianchi"],
+    dontList: ["Non ruotare il polso durante la salita"],
+    isCustom: false,
+    aliases: ["hammer curl", "curl martello", "curl presa neutra"],
+  },
+  {
+    id: "curl-cavi",
+    name: "Curl ai cavi",
+    muscleGroup: "Bicipiti",
+    description:
+      "In piedi davanti alla macchina a cavi con una barra o corda attaccata in basso. Piega i gomiti sollevando la barra verso il petto, poi ridiscendi controllato.",
+    doList: ["Tensione costante grazie al cavo: sfruttala controllando tutto il movimento", "Gomiti fermi"],
+    dontList: ["Non usare slancio del busto"],
+    isCustom: false,
+    aliases: ["cable curl", "curl al cavo"],
+  },
+  {
+    id: "push-down",
+    name: "Push down ai cavi",
+    muscleGroup: "Tricipiti",
+    description:
+      "In piedi davanti alla macchina a cavi, barra o corda in alto. Spingi verso il basso estendendo i gomiti, mantenendo i gomiti fermi lungo il busto, poi torna su controllato.",
+    doList: ["Gomiti fermi e vicini al busto", "Estensione completa in basso senza bloccare violentemente"],
+    dontList: ["Non usare il peso del corpo per spingere", "Non allargare i gomiti"],
+    isCustom: false,
+    aliases: ["tricep pushdown", "pushdown", "push down tricipiti"],
+  },
+  {
+    id: "kickback-tricipiti",
+    name: "Kickback tricipiti",
+    muscleGroup: "Tricipiti",
+    description:
+      "Busto inclinato in avanti, gomito piegato a 90° vicino al fianco, manubrio in mano. Estendi l'avambraccio indietro fino a braccio teso, poi ritorna controllato.",
+    doList: ["Gomito fermo e alto per tutto il movimento", "Contrazione di picco a braccio teso"],
+    dontList: ["Non muovere il gomito durante l'estensione", "Non usare slancio"],
+    isCustom: false,
+    aliases: ["tricep kickback", "kickback"],
+  },
+  {
+    id: "leg-raise",
+    name: "Sollevamento gambe (leg raise)",
+    muscleGroup: "Addominali",
+    description:
+      "Sdraiato supino (o appeso alla sbarra), gambe tese o piegate. Solleva le gambe verso il petto contraendo gli addominali bassi, poi ridiscendi controllato senza toccare terra.",
+    doList: ["Mantieni la zona lombare aderente al pavimento (se a terra)", "Movimento controllato, niente slancio"],
+    dontList: ["Non far inarcare la schiena", "Non far cadere le gambe di scatto"],
+    isCustom: false,
+    aliases: ["leg raise", "sollevamento gambe", "hanging leg raise"],
+  },
+  {
+    id: "bicycle-crunch",
+    name: "Bicycle crunch",
+    muscleGroup: "Addominali",
+    description:
+      "Sdraiato supino, mani dietro la testa. Porta alternativamente un gomito verso il ginocchio opposto in un movimento a pedalata, ruotando il busto.",
+    doList: ["Movimento lento e controllato, non veloce", "Ruota dal busto, non tirando il collo con le mani"],
+    dontList: ["Non tirare la testa con le mani", "Non far toccare i piedi a terra tra una ripetizione e l'altra"],
+    isCustom: false,
+    aliases: ["bicycle crunch", "crunch bicicletta"],
+  },
+  {
+    id: "ab-wheel",
+    name: "Ab wheel rollout",
+    muscleGroup: "Addominali",
+    description:
+      "In ginocchio, ruota (ab wheel) tenuta con entrambe le mani davanti a te. Spingi la ruota in avanti estendendo il corpo, mantenendo il core contratto, poi torna indietro.",
+    doList: ["Mantieni il core contratto per tutto il movimento", "Non scendere oltre il punto in cui riesci a controllare la schiena"],
+    dontList: ["Non far inarcare la zona lombare", "Non spingere troppo lontano se sei alle prime armi"],
+    isCustom: false,
+    aliases: ["ab wheel", "ruota addominali", "rollout"],
+  },
+  {
+    id: "situp",
+    name: "Sit-up",
+    muscleGroup: "Addominali",
+    description:
+      "Sdraiato supino, ginocchia piegate, piedi fissati o a terra. Solleva l'intero busto fino a sedersi, poi ridiscendi controllato.",
+    doList: ["Movimento controllato in entrambe le fasi", "Puoi incrociare le braccia sul petto per ridurre lo slancio"],
+    dontList: ["Non tirare il collo in avanti con forza", "Non usare slancio delle braccia"],
+    isCustom: false,
+    aliases: ["sit up", "situp", "addominali completi"],
+  },
+  {
+    id: "ponte-glutei",
+    name: "Ponte glutei (bodyweight)",
+    muscleGroup: "Glutei",
+    description:
+      "Sdraiato supino, ginocchia piegate, piedi a terra. Spingi i fianchi verso l'alto contraendo i glutei fino a estensione completa dell'anca, poi ridiscendi.",
+    doList: ["Contrai forte i glutei in alto", "Spingi sui talloni"],
+    dontList: ["Non inarcare eccessivamente la zona lombare in alto"],
+    isCustom: false,
+    aliases: ["glute bridge", "ponte glutei", "bridge"],
+  },
+  {
+    id: "affondi-indietro",
+    name: "Affondi indietro",
+    muscleGroup: "Glutei",
+    description:
+      "In piedi, fai un passo indietro e scendi piegando entrambe le ginocchia, poi torna in piedi spingendo sul tallone anteriore.",
+    doList: ["Busto eretto", "Spingi principalmente con la gamba anteriore"],
+    dontList: ["Non sbilanciarti in avanti"],
+    isCustom: false,
+    aliases: ["reverse lunge", "affondo indietro"],
+  },
+  {
+    id: "salto-corda",
+    name: "Salto con la corda",
+    muscleGroup: "Cardio",
+    description:
+      "Salta ritmicamente sopra una corda fatta ruotare sotto i piedi, per un allenamento cardiovascolare ad alta intensità.",
+    doList: ["Salti piccoli e controllati", "Atterra sull'avampiede"],
+    dontList: ["Non saltare troppo in alto", "Non irrigidire le ginocchia all'atterraggio"],
+    isCustom: false,
+    aliases: ["jump rope", "corda", "saltare la corda"],
+  },
+  {
+    id: "vogatore",
+    name: "Vogatore (rowing machine)",
+    muscleGroup: "Cardio",
+    description:
+      "Seduto al vogatore, spingi con le gambe e tira la maniglia verso l'addome in sequenza coordinata, poi torna alla posizione di partenza.",
+    doList: ["Sequenza corretta: gambe, poi busto, poi braccia", "Schiena dritta per tutto il movimento"],
+    dontList: ["Non curvare la schiena", "Non tirare solo con le braccia"],
+    isCustom: false,
+    aliases: ["rowing machine", "vogatore", "canottaggio indoor"],
+  },
+  {
+    id: "kettlebell-swing",
+    name: "Kettlebell swing",
+    muscleGroup: "Full Body",
+    description:
+      "In piedi, kettlebell tenuto con entrambe le mani. Con un movimento di anca (hip hinge), fai oscillare il kettlebell tra le gambe e poi in avanti fino all'altezza del petto.",
+    doList: ["Il movimento parte dai fianchi, non dalle braccia", "Contrai forte i glutei in cima al movimento"],
+    dontList: ["Non usare le braccia per sollevare il peso", "Non inarcare la schiena"],
+    isCustom: false,
+    aliases: ["kettlebell swing", "swing kettlebell"],
+  },
+  {
+    id: "thruster",
+    name: "Thruster",
+    muscleGroup: "Full Body",
+    description:
+      "In piedi con manubri o bilanciere all'altezza delle spalle. Scendi in uno squat completo, poi risali esplosivamente spingendo il peso sopra la testa.",
+    doList: ["Un unico movimento fluido tra squat e spinta", "Core attivo per tutto il movimento"],
+    dontList: ["Non separare troppo le due fasi", "Non inarcare la schiena nella spinta finale"],
+    isCustom: false,
+    aliases: ["thruster", "squat to press"],
   },
 ];

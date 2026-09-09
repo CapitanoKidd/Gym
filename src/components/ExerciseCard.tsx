@@ -1,7 +1,8 @@
 import React from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Exercise } from "@/types";
 import { colors } from "@/theme";
+import ExerciseThumb from "./ExerciseThumb";
 
 export default function ExerciseCard({
   exercise,
@@ -14,7 +15,7 @@ export default function ExerciseCard({
 }) {
   return (
     <Pressable style={styles.card} onPress={onPress}>
-      <Image source={{ uri: exercise.imageUrl }} style={styles.image} />
+      <ExerciseThumb exercise={exercise} size={72} />
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>
           {exercise.name}
@@ -37,7 +38,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  image: { width: 72, height: 72 },
   info: { flex: 1, paddingHorizontal: 12 },
   name: { color: colors.text, fontSize: 16, fontWeight: "600" },
   group: { color: colors.textMuted, fontSize: 13, marginTop: 2 },

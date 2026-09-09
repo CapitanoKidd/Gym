@@ -14,7 +14,8 @@ export interface Exercise {
   id: string;
   name: string;
   muscleGroup: MuscleGroup;
-  imageUrl: string;
+  /** URL di una foto/immagine reale, opzionale. Se assente si mostra un'icona per gruppo muscolare. */
+  imageUrl?: string;
   description: string;
   doList: string[];
   dontList: string[];

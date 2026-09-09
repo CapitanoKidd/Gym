@@ -4,7 +4,6 @@ import {
   AppState,
   AppStateStatus,
   BackHandler,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -28,6 +27,7 @@ import { cancelWorkoutReminder, scheduleWorkoutReminder } from "@/utils/notifica
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { HistoryExerciseLog } from "@/types";
+import ExerciseThumb from "@/components/ExerciseThumb";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "WorkoutSession">;
 
@@ -221,7 +221,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
 
       {currentActive.phase === "exercise" && currentExercise && (
         <View style={styles.body}>
-          <Image source={{ uri: currentExercise.imageUrl }} style={styles.image} />
+          <ExerciseThumb exercise={currentExercise} size={220} borderRadius={20} style={styles.image} />
           <Text style={styles.exerciseName}>{currentExercise.name}</Text>
           <Text style={styles.setsReps}>
             {currentEntry?.sets ?? "-"} serie × {currentEntry?.reps ?? "-"} ripetizioni

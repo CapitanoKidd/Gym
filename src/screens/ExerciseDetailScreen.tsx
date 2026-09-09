@@ -5,6 +5,7 @@ import { ExercisesStackParamList } from "@/navigation/types";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import { usePlanStore } from "@/store/usePlanStore";
 import { colors } from "@/theme";
+import MuscleGroupIcon, { MUSCLE_GROUP_COLORS } from "@/components/MuscleGroupIcon";
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, "ExerciseDetail">;
 
@@ -46,7 +47,13 @@ export default function ExerciseDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Image source={{ uri: exercise.imageUrl }} style={styles.image} />
+      {exercise.imageUrl ? (
+        <Image source={{ uri: exercise.imageUrl }} style={styles.image} />
+      ) : (
+        <View style={[styles.image, styles.iconHeader, { backgroundColor: MUSCLE_GROUP_COLORS[exercise.muscleGroup] + "22" }]}>
+          <MuscleGroupIcon group={exercise.muscleGroup} size={120} />
+        </View>
+      )}
       <View style={styles.body}>
         <Text style={styles.title}>{exercise.name}</Text>
         <View style={styles.badge}>
@@ -98,6 +105,7 @@ export default function ExerciseDetailScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   image: { width: "100%", height: 220 },
+  iconHeader: { alignItems: "center", justifyContent: "center" },
   body: { padding: 20 },
   title: { color: colors.text, fontSize: 24, fontWeight: "700" },
   badge: {

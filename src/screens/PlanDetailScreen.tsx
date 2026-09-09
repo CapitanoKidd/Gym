@@ -1,10 +1,11 @@
 import React, { useLayoutEffect } from "react";
-import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import { colors } from "@/theme";
+import ExerciseThumb from "@/components/ExerciseThumb";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "PlanDetail">;
 
@@ -75,7 +76,7 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
               onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: exercise.id })}
             >
               <Text style={styles.rowIndex}>{index + 1}</Text>
-              <Image source={{ uri: exercise.imageUrl }} style={styles.thumb} />
+              <ExerciseThumb exercise={exercise} size={56} borderRadius={10} style={styles.thumb} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle} numberOfLines={1}>
                   {exercise.name}

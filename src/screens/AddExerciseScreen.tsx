@@ -31,13 +31,13 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
   const [dontText, setDontText] = useState(existing?.dontList.join("\n") ?? "");
   const [aliasText, setAliasText] = useState(existing?.aliases.join(", ") ?? "");
 
-  const canSave = name.trim().length > 0 && imageUrl.trim().length > 0;
+  const canSave = name.trim().length > 0;
 
   const save = () => {
     const payload = {
       name: name.trim(),
       muscleGroup,
-      imageUrl: imageUrl.trim(),
+      imageUrl: imageUrl.trim() || undefined,
       description: description.trim(),
       doList: doText.split("\n").map((s) => s.trim()).filter(Boolean),
       dontList: dontText.split("\n").map((s) => s.trim()).filter(Boolean),
@@ -74,7 +74,7 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
         ))}
       </View>
 
-      <Text style={styles.label}>URL immagine di anteprima</Text>
+      <Text style={styles.label}>URL immagine di anteprima (opzionale)</Text>
       <TextInput
         style={styles.input}
         value={imageUrl}
@@ -83,6 +83,9 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
         placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
       />
+      <Text style={styles.hint}>
+        Se non la imposti, l'esercizio mostra un'icona colorata in base al gruppo muscolare.
+      </Text>
 
       <Text style={styles.label}>Altri nomi / alias (separati da virgola)</Text>
       <TextInput

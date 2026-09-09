@@ -39,14 +39,32 @@ export const useExerciseStore = create<ExerciseState>()(
     {
       name: "gym-exercises",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 2,
-      migrate: (persistedState) => {
-        // Versione 1 -> 2: aggiunge il campo `aliases` agli esercizi custom salvati prima
-        // dell'introduzione della ricerca intelligente.
+      version: 3,
+      migrate: (persistedState, fromVersion) => {
         const state = persistedState as ExerciseState;
-        if (state?.exercises) {
+        if (!state?.exercises) return state;
+
+        if (fromVersion < 2) {
+          // Versione 1 -> 2: aggiunge il campo `aliases` agli esercizi custom salvati prima
+          // dell'introduzione della ricerca intelligente.
           state.exercises = state.exercises.map((e) => ({ ...e, aliases: e.aliases ?? [] }));
         }
+
+        if (fromVersion < 3) {
+          // Versione 2 -> 3: le immagini segnaposto casuali (picsum) vengono tolte dagli
+          // esercizi predefiniti (isCustom: false) a favore dell'icona per gruppo
+          // muscolare — senza toccare eventuali immagini che l'utente ha impostato lui
+          // stesso modificando un esercizio predefinito. In più, aggiunge alla libreria
+          // già salvata gli esercizi nuovi introdotti in questa versione (senza duplicare
+          // o toccare quelli già presenti).
+          state.exercises = state.exercises.map((e) =>
+            !e.isCustom && e.imageUrl?.includes("picsum.photos") ? { ...e, imageUrl: undefined } : e
+          );
+          const existingIds = new Set(state.exercises.map((e) => e.id));
+          const newSeedExercises = SEED_EXERCISES.filter((e) => !existingIds.has(e.id));
+          state.exercises = [...state.exercises, ...newSeedExercises];
+        }
+
         return state;
       },
     }

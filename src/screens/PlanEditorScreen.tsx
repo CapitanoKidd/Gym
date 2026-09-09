@@ -1,13 +1,15 @@
-import React, { useLayoutEffect, useState } from "react";
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useEffect, useLayoutEffect, useState } from "react";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore, makeDraftPlanExercise } from "@/store/usePlanStore";
 import { useExerciseStore } from "@/store/useExerciseStore";
+import { usePickerResultStore } from "@/store/usePickerResultStore";
 import { PlanExercise } from "@/types";
 import { colors } from "@/theme";
+import ExerciseThumb from "@/components/ExerciseThumb";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "PlanEditor">;
 
@@ -28,14 +30,22 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
     navigation.setOptions({ title: planId ? "Modifica scheda" : "Nuova scheda" });
   }, [navigation, planId]);
 
+  // ExercisePicker torna qui con un plain goBack() e lascia l'esercizio scelto in questo
+  // store effimero (non nei params di navigazione: una funzione di callback lì non è
+  // serializzabile, e "navigate + merge" per tornare allo schermo esistente si è rivelato
+  // inaffidabile — a volte impila una nuova istanza invece di riusare quella corrente).
+  const lastPicked = usePickerResultStore((s) => s.lastPicked);
+  const consumePicked = usePickerResultStore((s) => s.consume);
+  useEffect(() => {
+    if (!lastPicked) return;
+    setDraft((prev) => [...prev, makeDraftPlanExercise(lastPicked.exerciseId)]);
+    setDirty(true);
+    consumePicked();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastPicked?.nonce]);
+
   const openPicker = () => {
-    navigation.navigate("ExercisePicker", {
-      excludeIds: draft.map((d) => d.exerciseId),
-      onAdd: (exerciseId: string) => {
-        setDraft((prev) => [...prev, makeDraftPlanExercise(exerciseId)]);
-        setDirty(true);
-      },
-    });
+    navigation.navigate("ExercisePicker", { excludeIds: draft.map((d) => d.exerciseId) });
   };
 
   const removeRow = (rowId: string) => {
@@ -99,7 +109,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
               onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: exercise.id })}
               style={styles.rowHeaderMain}
             >
-              <Image source={{ uri: exercise.imageUrl }} style={styles.thumb} />
+              <ExerciseThumb exercise={exercise} size={44} borderRadius={8} style={styles.thumb} />
               <Text style={styles.rowTitle} numberOfLines={2}>
                 {exercise.name}
               </Text>
