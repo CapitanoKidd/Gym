@@ -37,7 +37,7 @@ export async function scheduleWorkoutReminder(elapsedLabel: string) {
       body: `Il cronometro è ancora attivo (${elapsedLabel}). Torna nell'app per continuare o terminare.`,
       sound: Platform.OS === "ios" ? undefined : undefined,
     },
-    trigger: { seconds: 2, repeats: false },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 2, repeats: false },
   });
 }
 

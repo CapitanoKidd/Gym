@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { BackupData } from "@/types";
@@ -16,15 +16,14 @@ export async function exportBackup(): Promise<void> {
     history: useHistoryStore.getState().entries,
   };
 
-  const dir = FileSystem.documentDirectory;
-  if (!dir) throw new Error("Impossibile accedere alla cartella documenti del dispositivo.");
   const fileName = `la-mia-palestra-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  const fileUri = dir + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(data, null, 2));
+  const file = new File(Paths.document, fileName);
+  file.create({ overwrite: true });
+  file.write(JSON.stringify(data, null, 2));
 
   const canShare = await Sharing.isAvailableAsync();
   if (canShare) {
-    await Sharing.shareAsync(fileUri, { mimeType: "application/json", dialogTitle: "Esporta backup" });
+    await Sharing.shareAsync(file.uri, { mimeType: "application/json", dialogTitle: "Esporta backup" });
   }
 }
 
@@ -39,7 +38,7 @@ export async function importBackup(mode: ImportMode): Promise<boolean> {
   const picked = await DocumentPicker.getDocumentAsync({ type: "application/json", copyToCacheDirectory: true });
   if (picked.canceled || !picked.assets?.[0]) return false;
 
-  const content = await FileSystem.readAsStringAsync(picked.assets[0].uri);
+  const content = await new File(picked.assets[0].uri).text();
   const data = JSON.parse(content) as BackupData;
 
   if (!data || !Array.isArray(data.exercises) || !Array.isArray(data.plans)) {

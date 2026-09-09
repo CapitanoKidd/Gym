@@ -1,6 +1,6 @@
 # La Mia Palestra 🏋️
 
-App mobile ad **uso personale** (non destinata alla pubblicazione sugli store) per gestire allenamenti in palestra, costruita con **Expo / React Native**.
+App mobile ad **uso personale** (non destinata alla pubblicazione sugli store) per gestire allenamenti in palestra, costruita con **Expo SDK 57 / React Native 0.86 / React 19**.
 
 ## Funzionalità
 
