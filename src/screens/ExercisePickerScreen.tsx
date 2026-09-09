@@ -1,45 +1,63 @@
 import React, { useMemo, useState } from "react";
-import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
-import { useExerciseStore } from "@/store/useExerciseStore";
-import { usePlanStore } from "@/store/usePlanStore";
+import { useExerciseStore, MUSCLE_GROUPS } from "@/store/useExerciseStore";
 import ExerciseCard from "@/components/ExerciseCard";
 import { colors } from "@/theme";
-import { Pressable } from "react-native";
+import { searchExercises } from "@/utils/search";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "ExercisePicker">;
 
 export default function ExercisePickerScreen({ route, navigation }: Props) {
-  const { planId } = route.params;
+  const { onAdd, excludeIds } = route.params;
   const exercises = useExerciseStore((s) => s.exercises);
-  const addExerciseToPlan = usePlanStore((s) => s.addExerciseToPlan);
   const [query, setQuery] = useState("");
-  const [added, setAdded] = useState<Set<string>>(new Set());
+  const [group, setGroup] = useState<string | null>(null);
+  const [added, setAdded] = useState<Set<string>>(new Set(excludeIds ?? []));
 
-  const filtered = useMemo(
-    () => exercises.filter((e) => e.name.toLowerCase().includes(query.toLowerCase())),
-    [exercises, query]
-  );
+  const filtered = useMemo(() => {
+    const byQuery = searchExercises(exercises, query);
+    return group ? byQuery.filter((e) => e.muscleGroup === group) : byQuery;
+  }, [exercises, query, group]);
 
   const handleAdd = (exerciseId: string) => {
-    addExerciseToPlan(planId, exerciseId);
+    onAdd(exerciseId);
     setAdded((prev) => new Set(prev).add(exerciseId));
   };
 
   return (
     <View style={styles.container}>
       <TextInput
-        placeholder="Cerca esercizio..."
+        placeholder="Cerca esercizio (anche per nome alternativo)..."
         placeholderTextColor={colors.textMuted}
         value={query}
         onChangeText={setQuery}
         style={styles.search}
       />
       <FlatList
+        data={["Tutti", ...MUSCLE_GROUPS]}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item}
+        contentContainerStyle={{ paddingVertical: 10, gap: 8 }}
+        renderItem={({ item }) => {
+          const selected = item === "Tutti" ? group === null : group === item;
+          return (
+            <Pressable
+              onPress={() => setGroup(item === "Tutti" ? null : item)}
+              style={[styles.chip, selected && styles.chipSelected]}
+            >
+              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{item}</Text>
+            </Pressable>
+          );
+        }}
+      />
+      <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        ListEmptyComponent={<Text style={styles.empty}>Nessun esercizio trovato.</Text>}
         renderItem={({ item }) => (
           <ExerciseCard
             exercise={item}
@@ -70,6 +88,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { color: colors.textMuted, fontSize: 13 },
+  chipTextSelected: { color: "#fff", fontWeight: "600" },
+  empty: { color: colors.textMuted, textAlign: "center", marginTop: 40 },
   addBtn: {
     backgroundColor: colors.primary,
     borderRadius: 10,

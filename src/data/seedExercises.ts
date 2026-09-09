@@ -23,6 +23,7 @@ export const SEED_EXERCISES: Exercise[] = [
       "Non sollevare i talloni da terra",
     ],
     isCustom: false,
+    aliases: ["squat", "back squat", "piegamenti sulle gambe"],
   },
   {
     id: "stacco",
@@ -42,6 +43,7 @@ export const SEED_EXERCISES: Exercise[] = [
       "Non estendere di scatto ad inizio movimento",
     ],
     isCustom: false,
+    aliases: ["stacco da terra", "deadlift", "stacco"],
   },
   {
     id: "panca",
@@ -61,6 +63,7 @@ export const SEED_EXERCISES: Exercise[] = [
       "Non bloccare completamente i gomiti con violenza",
     ],
     isCustom: false,
+    aliases: ["panca piana", "bench press", "distensioni su panca"],
   },
   {
     id: "trazioni",
@@ -79,6 +82,7 @@ export const SEED_EXERCISES: Exercise[] = [
       "Non fermarti a metà range di movimento",
     ],
     isCustom: false,
+    aliases: ["pull up", "pullup", "trazioni"],
   },
   {
     id: "military-press",
@@ -96,6 +100,7 @@ export const SEED_EXERCISES: Exercise[] = [
       "Non usare le gambe per spingere (a meno di push press voluto)",
     ],
     isCustom: false,
+    aliases: ["overhead press", "ohp", "lento avanti", "shoulder press"],
   },
   {
     id: "curl-bicipiti",
@@ -110,6 +115,7 @@ export const SEED_EXERCISES: Exercise[] = [
       "Non estendere completamente di scatto ad inizio ripetizione",
     ],
     isCustom: false,
+    aliases: ["curl", "biceps curl", "curl bilanciere"],
   },
   {
     id: "french-press",
@@ -121,6 +127,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Mantieni i gomiti puntati verso il soffitto e fermi", "Movimento controllato"],
     dontList: ["Non allargare i gomiti durante la discesa", "Non usare carichi eccessivi"],
     isCustom: false,
+    aliases: ["skull crusher", "tricipiti bilanciere", "estensioni tricipiti"],
   },
   {
     id: "plank",
@@ -132,6 +139,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Mantieni la linea testa-bacino-talloni dritta", "Respira normalmente"],
     dontList: ["Non far cadere il bacino verso il basso", "Non alzare troppo i glutei"],
     isCustom: false,
+    aliases: ["plank", "tavola", "planking"],
   },
   {
     id: "hip-thrust",
@@ -143,6 +151,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Mento leggermente al petto", "Spingi sui talloni", "Contrai forte i glutei in alto"],
     dontList: ["Non iperestendere la zona lombare in alto", "Non usare solo le gambe"],
     isCustom: false,
+    aliases: ["hip thrust", "spinta anche", "ponte glutei"],
   },
   {
     id: "affondi",
@@ -154,6 +163,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Busto eretto", "Ginocchio anteriore sopra la caviglia"],
     dontList: ["Non far toccare il ginocchio posteriore violentemente a terra", "Non sbilanciarti in avanti"],
     isCustom: false,
+    aliases: ["lunges", "affondi", "walking lunges"],
   },
   {
     id: "rematore",
@@ -165,6 +175,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Schiena piatta per tutto il movimento", "Tira con i gomiti, non con le mani"],
     dontList: ["Non usare slancio con la schiena", "Non arrotondare la parte alta della schiena"],
     isCustom: false,
+    aliases: ["bent over row", "row", "rematore bilanciere"],
   },
   {
     id: "leg-press",
@@ -176,6 +187,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Mantieni la zona lombare aderente allo schienale", "Range di movimento controllato"],
     dontList: ["Non bloccare le ginocchia in estensione completa con forza", "Non staccare il bacino dallo schienale"],
     isCustom: false,
+    aliases: ["leg press", "pressa gambe"],
   },
   {
     id: "alzate-laterali",
@@ -187,6 +199,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Movimento lento e controllato", "Gomiti leggermente più alti dei polsi"],
     dontList: ["Non usare slancio del busto", "Non salire oltre l'altezza delle spalle con carichi eccessivi"],
     isCustom: false,
+    aliases: ["lateral raise", "alzate laterali manubri"],
   },
   {
     id: "crunch",
@@ -198,6 +211,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Concentrati sulla contrazione addominale", "Espira durante la salita"],
     dontList: ["Non tirare la testa con le mani", "Non usare slancio con le gambe"],
     isCustom: false,
+    aliases: ["crunch", "addominali crunch", "sit up"],
   },
   {
     id: "corsa",
@@ -209,6 +223,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Mantieni una postura eretta", "Atterra con il piede sotto al bacino"],
     dontList: ["Non aumentare il ritmo troppo bruscamente", "Non trascurare il riscaldamento"],
     isCustom: false,
+    aliases: ["corsa", "running", "tapis roulant", "jogging"],
   },
   {
     id: "burpees",
@@ -220,6 +235,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Mantieni il core attivo durante il plank", "Atterra morbido dal salto"],
     dontList: ["Non far cadere il bacino durante il plank", "Non saltare qualità per velocità"],
     isCustom: false,
+    aliases: ["burpee", "burpees"],
   },
   {
     id: "dips",
@@ -231,6 +247,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Busto leggermente inclinato in avanti per più petto, verticale per più tricipiti", "Scendi controllato"],
     dontList: ["Non scendere troppo se hai problemi alle spalle", "Non bloccare i gomiti con forza in alto"],
     isCustom: false,
+    aliases: ["dips", "parallele", "tricipiti alle parallele"],
   },
   {
     id: "leg-curl",
@@ -242,6 +259,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Bacino ben aderente al supporto", "Movimento lento in fase eccentrica"],
     dontList: ["Non sollevare il bacino dal supporto", "Non usare slancio"],
     isCustom: false,
+    aliases: ["leg curl", "femorali", "hamstring curl"],
   },
   {
     id: "pulley",
@@ -253,6 +271,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Petto in fuori, leggera inclinazione indietro del busto", "Tira con la schiena, non solo con le braccia"],
     dontList: ["Non tirare la barra dietro la nuca", "Non usare slancio eccessivo del busto"],
     isCustom: false,
+    aliases: ["lat machine", "pulldown", "lat pulldown", "pulley"],
   },
   {
     id: "calf-raise",
@@ -264,6 +283,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Range di movimento completo", "Pausa in contrazione massima"],
     dontList: ["Non rimbalzare velocemente tra le ripetizioni", "Non piegare le ginocchia per aiutarti"],
     isCustom: false,
+    aliases: ["calf raise", "polpacci", "alzate sui polpacci"],
   },
   {
     id: "mountain-climber",
@@ -275,6 +295,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Mantieni il bacino stabile", "Core sempre attivo"],
     dontList: ["Non far ondeggiare i fianchi", "Non perdere l'allineamento del busto"],
     isCustom: false,
+    aliases: ["mountain climber", "scalatore"],
   },
   {
     id: "russian-twist",
@@ -286,6 +307,7 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Mantieni la schiena dritta, non curva", "Movimento controllato"],
     dontList: ["Non curvare eccessivamente la parte bassa della schiena", "Non usare solo le braccia per il movimento"],
     isCustom: false,
+    aliases: ["russian twist", "torsioni russe"],
   },
   {
     id: "spinta-manubri-inclinata",
@@ -297,5 +319,25 @@ export const SEED_EXERCISES: Exercise[] = [
     doList: ["Scapole retratte", "Traiettoria leggermente convergente in alto"],
     dontList: ["Non far scontrare i manubri con forza in alto", "Non inarcare eccessivamente la schiena"],
     isCustom: false,
+    aliases: ["incline dumbbell press", "panca inclinata manubri"],
+  },
+  {
+    id: "flessioni",
+    name: "Flessioni",
+    muscleGroup: "Petto",
+    imageUrl: img("pushup"),
+    description:
+      "A terra in posizione di plank, mani leggermente più larghe delle spalle. Piega i gomiti abbassando il petto verso il pavimento, poi spingi per risalire.",
+    doList: [
+      "Mantieni il corpo allineato dalla testa ai talloni",
+      "Gomiti a circa 45° dal busto, non completamente aperti",
+      "Scendi fino a sfiorare il pavimento col petto",
+    ],
+    dontList: [
+      "Non far cadere il bacino verso il basso",
+      "Non alzare i glutei per facilitare il movimento",
+    ],
+    isCustom: false,
+    aliases: ["push up", "push-up", "pushup", "piegamenti sulle braccia", "piegamenti"],
   },
 ];

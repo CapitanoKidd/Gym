@@ -27,6 +27,7 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
   const [description, setDescription] = useState(existing?.description ?? "");
   const [doText, setDoText] = useState(existing?.doList.join("\n") ?? "");
   const [dontText, setDontText] = useState(existing?.dontList.join("\n") ?? "");
+  const [aliasText, setAliasText] = useState(existing?.aliases.join(", ") ?? "");
 
   const canSave = name.trim().length > 0 && imageUrl.trim().length > 0;
 
@@ -38,6 +39,7 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
       description: description.trim(),
       doList: doText.split("\n").map((s) => s.trim()).filter(Boolean),
       dontList: dontText.split("\n").map((s) => s.trim()).filter(Boolean),
+      aliases: aliasText.split(",").map((s) => s.trim()).filter(Boolean),
     };
     if (existing) {
       updateExercise(existing.id, payload);
@@ -74,6 +76,19 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
         placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
       />
+
+      <Text style={styles.label}>Altri nomi / alias (separati da virgola)</Text>
+      <TextInput
+        style={styles.input}
+        value={aliasText}
+        onChangeText={setAliasText}
+        placeholder="Es. push up, piegamenti"
+        placeholderTextColor={colors.textMuted}
+      />
+      <Text style={styles.hint}>
+        Usati dalla ricerca intelligente: se cerchi "push up" e questo esercizio si chiama
+        "Flessioni", aggiungendo l'alias lo troverai comunque.
+      </Text>
 
       <Text style={styles.label}>Descrizione / come si esegue</Text>
       <TextInput
@@ -115,6 +130,7 @@ export default function AddExerciseScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   label: { color: colors.text, fontWeight: "600", marginTop: 16, marginBottom: 6 },
+  hint: { color: colors.textMuted, fontSize: 12, marginTop: 6, lineHeight: 17 },
   input: {
     backgroundColor: colors.card,
     borderRadius: 12,

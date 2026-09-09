@@ -12,6 +12,8 @@ interface ExerciseState {
   updateExercise: (id: string, data: Partial<Exercise>) => void;
   deleteExercise: (id: string) => void;
   getById: (id: string) => Exercise | undefined;
+  /** Sostituisce l'intera libreria esercizi (usato dall'import di un backup) */
+  replaceAll: (exercises: Exercise[]) => void;
 }
 
 export const useExerciseStore = create<ExerciseState>()(
@@ -32,10 +34,21 @@ export const useExerciseStore = create<ExerciseState>()(
         set((state) => ({ exercises: state.exercises.filter((e) => e.id !== id) }));
       },
       getById: (id) => get().exercises.find((e) => e.id === id),
+      replaceAll: (exercises) => set({ exercises }),
     }),
     {
       name: "gym-exercises",
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: (persistedState) => {
+        // Versione 1 -> 2: aggiunge il campo `aliases` agli esercizi custom salvati prima
+        // dell'introduzione della ricerca intelligente.
+        const state = persistedState as ExerciseState;
+        if (state?.exercises) {
+          state.exercises = state.exercises.map((e) => ({ ...e, aliases: e.aliases ?? [] }));
+        }
+        return state;
+      },
     }
   )
 );

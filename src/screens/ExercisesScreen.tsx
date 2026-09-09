@@ -5,6 +5,7 @@ import { ExercisesStackParamList } from "@/navigation/types";
 import { useExerciseStore, MUSCLE_GROUPS } from "@/store/useExerciseStore";
 import ExerciseCard from "@/components/ExerciseCard";
 import { colors } from "@/theme";
+import { searchExercises } from "@/utils/search";
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, "ExercisesList">;
 
@@ -14,17 +15,14 @@ export default function ExercisesScreen({ navigation }: Props) {
   const [group, setGroup] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    return exercises.filter((e) => {
-      const matchesQuery = e.name.toLowerCase().includes(query.toLowerCase());
-      const matchesGroup = !group || e.muscleGroup === group;
-      return matchesQuery && matchesGroup;
-    });
+    const byQuery = searchExercises(exercises, query);
+    return group ? byQuery.filter((e) => e.muscleGroup === group) : byQuery;
   }, [exercises, query, group]);
 
   return (
     <View style={styles.container}>
       <TextInput
-        placeholder="Cerca esercizio..."
+        placeholder="Cerca esercizio (anche per nome alternativo)..."
         placeholderTextColor={colors.textMuted}
         value={query}
         onChangeText={setQuery}

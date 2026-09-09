@@ -7,12 +7,20 @@ export type ExercisesStackParamList = {
 export type PlansStackParamList = {
   PlansList: undefined;
   PlanDetail: { planId: string };
-  ExercisePicker: { planId: string };
+  PlanEditor: { planId?: string };
+  ExercisePicker: { onAdd: (exerciseId: string) => void; excludeIds?: string[] };
   ExerciseDetail: { exerciseId: string };
   WorkoutSession: { planId: string };
+};
+
+export type HistoryStackParamList = {
+  HistoryList: undefined;
+  HistoryDetail: { entryId: string };
+  Settings: undefined;
 };
 
 export type RootTabParamList = {
   Esercizi: undefined;
   Schede: undefined;
+  Storico: undefined;
 };

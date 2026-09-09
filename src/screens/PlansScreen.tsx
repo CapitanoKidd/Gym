@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import React from "react";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
@@ -9,18 +9,6 @@ type Props = NativeStackScreenProps<PlansStackParamList, "PlansList">;
 
 export default function PlansScreen({ navigation }: Props) {
   const plans = usePlanStore((s) => s.plans);
-  const createPlan = usePlanStore((s) => s.createPlan);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newName, setNewName] = useState("");
-
-  const confirmCreate = () => {
-    const trimmed = newName.trim();
-    if (!trimmed) return;
-    const plan = createPlan(trimmed);
-    setNewName("");
-    setModalVisible(false);
-    navigation.navigate("PlanDetail", { planId: plan.id });
-  };
 
   return (
     <View style={styles.container}>
@@ -40,39 +28,9 @@ export default function PlansScreen({ navigation }: Props) {
           </Pressable>
         )}
       />
-      <Pressable style={styles.fab} onPress={() => setModalVisible(true)}>
+      <Pressable style={styles.fab} onPress={() => navigation.navigate("PlanEditor", {})}>
         <Text style={styles.fabText}>+</Text>
       </Pressable>
-
-      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Nuova scheda</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Es. Push Day"
-              placeholderTextColor={colors.textMuted}
-              value={newName}
-              onChangeText={setNewName}
-              autoFocus
-            />
-            <View style={styles.modalActions}>
-              <Pressable
-                style={styles.modalCancel}
-                onPress={() => {
-                  setModalVisible(false);
-                  setNewName("");
-                }}
-              >
-                <Text style={styles.modalCancelText}>Annulla</Text>
-              </Pressable>
-              <Pressable style={styles.modalConfirm} onPress={confirmCreate}>
-                <Text style={styles.modalConfirmText}>Crea</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -103,21 +61,4 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   fabText: { color: "#fff", fontSize: 30, lineHeight: 32, marginTop: -2 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 24 },
-  modalCard: { backgroundColor: colors.card, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
-  modalTitle: { color: colors.text, fontSize: 18, fontWeight: "700", marginBottom: 12 },
-  input: {
-    backgroundColor: colors.cardAlt,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalActions: { flexDirection: "row", justifyContent: "flex-end", gap: 12, marginTop: 18 },
-  modalCancel: { paddingVertical: 10, paddingHorizontal: 16 },
-  modalCancelText: { color: colors.textMuted, fontWeight: "600" },
-  modalConfirm: { backgroundColor: colors.primary, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10 },
-  modalConfirmText: { color: "#fff", fontWeight: "700" },
 });
