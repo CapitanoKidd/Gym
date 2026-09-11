@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { useKeepAwake } from "expo-keep-awake";
+import { setAudioModeAsync } from "expo-audio";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
@@ -28,6 +29,7 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { HistoryExerciseLog } from "@/types";
 import ExerciseThumb from "@/components/ExerciseThumb";
+import { useRestEndSound } from "@/utils/sound";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "WorkoutSession">;
 
@@ -35,6 +37,13 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   // Tiene lo schermo acceso per tutta la durata dell'allenamento: durante il riposo
   // spesso non si tocca il telefono e senza questo lo schermo si spegnerebbe da solo.
   useKeepAwake();
+
+  const playRestEndSound = useRestEndSound();
+  // Il beep di fine riposo è un allarme funzionale (serve a farsi notare), non un suono
+  // decorativo: deve sentirsi anche se il telefono è in modalità silenziosa/vibrazione.
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+  }, []);
 
   const { planId } = route.params;
   const plan = usePlanStore((s) => s.getById(planId));
@@ -175,10 +184,11 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
     nextExercise(active.currentIndex + 1);
   };
 
-  // Passa automaticamente al prossimo esercizio quando il riposo finisce, con una vibrazione di avviso
+  // Passa automaticamente al prossimo esercizio quando il riposo finisce, con vibrazione + beep
   useEffect(() => {
     if (ready && active!.phase === "rest" && restRemaining <= 0) {
       Vibration.vibrate([0, 250, 120, 250]);
+      playRestEndSound();
       goToNextExercise();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
