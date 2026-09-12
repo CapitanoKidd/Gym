@@ -1,11 +1,13 @@
-import React, { useLayoutEffect } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useLayoutEffect, useMemo } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import { colors } from "@/theme";
 import ExerciseThumb from "@/components/ExerciseThumb";
+import { buildExerciseGroups } from "@/utils/supersets";
+import { PlanExercise } from "@/types";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "PlanDetail">;
 
@@ -26,6 +28,8 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation, plan?.name, planId]);
+
+  const groups = useMemo(() => (plan ? buildExerciseGroups(plan.exercises) : []), [plan]);
 
   if (!plan) {
     return (
@@ -49,47 +53,71 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
     ]);
   };
 
+  const renderExerciseContent = (item: PlanExercise, index: number) => {
+    const exercise = getExerciseById(item.exerciseId);
+    if (!exercise) {
+      return (
+        <View style={styles.missingRowContent}>
+          <Text style={styles.rowIndex}>{index + 1}</Text>
+          <Text style={styles.missingText}>⚠️ Esercizio eliminato dalla libreria — rimuovilo da "Modifica"</Text>
+        </View>
+      );
+    }
+    return (
+      <Pressable
+        style={styles.rowContent}
+        onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: exercise.id })}
+      >
+        <Text style={styles.rowIndex}>{index + 1}</Text>
+        <ExerciseThumb exercise={exercise} size={56} borderRadius={10} style={styles.thumb} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.rowTitle} numberOfLines={1}>
+            {exercise.name}
+          </Text>
+          <Text style={styles.rowMeta}>
+            {item.sets} serie × {item.reps} rip.{item.weight ? `  ·  ${item.weight} kg` : ""}  ·  riposo {item.restSeconds}s
+          </Text>
+        </View>
+      </Pressable>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={plan.exercises}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 160 }}
-        ListEmptyComponent={
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 160 }}>
+        {plan.exercises.length === 0 && (
           <Text style={styles.empty}>
             Nessun esercizio in questa scheda.{"\n"}Tocca "Modifica" per aggiungerne.
           </Text>
-        }
-        renderItem={({ item, index }) => {
-          const exercise = getExerciseById(item.exerciseId);
-          if (!exercise) {
+        )}
+
+        {groups.map((group) => {
+          const startIndex = plan.exercises.findIndex((e) => e.id === group[0].id);
+          const key = group.map((e) => e.id).join("-");
+
+          if (group.length === 1) {
             return (
-              <View style={[styles.row, styles.missingRow]}>
-                <Text style={styles.rowIndex}>{index + 1}</Text>
-                <Text style={styles.missingText}>⚠️ Esercizio eliminato dalla libreria — rimuovilo da "Modifica"</Text>
+              <View key={key} style={styles.row}>
+                {renderExerciseContent(group[0], startIndex)}
               </View>
             );
           }
+
+          // Superserie: un unico bordo dorato avvolge tutti gli esercizi del gruppo,
+          // per far capire a colpo d'occhio quali vanno eseguiti di fila senza riposo.
           return (
-            <Pressable
-              style={styles.row}
-              onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: exercise.id })}
-            >
-              <Text style={styles.rowIndex}>{index + 1}</Text>
-              <ExerciseThumb exercise={exercise} size={56} borderRadius={10} style={styles.thumb} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                  {exercise.name}
-                </Text>
-                <Text style={styles.rowMeta}>
-                  {item.sets} serie × {item.reps} rip.{item.weight ? `  ·  ${item.weight} kg` : ""}  ·  riposo {item.restSeconds}s
-                </Text>
-                {item.supersetWithNext && <Text style={styles.supersetHint}>🔗 In superserie col prossimo</Text>}
-              </View>
-            </Pressable>
+            <View key={key} style={styles.supersetGroup}>
+              <Text style={styles.supersetGroupLabel}>🔗 Superserie</Text>
+              {group.map((member, mi) => (
+                <View key={member.id}>
+                  {renderExerciseContent(member, startIndex + mi)}
+                  {mi < group.length - 1 && <View style={styles.supersetDivider} />}
+                </View>
+              ))}
+            </View>
           );
-        }}
-      />
+        })}
+      </ScrollView>
 
       <View style={styles.bottomBar}>
         <Pressable style={styles.deleteBtn} onPress={confirmDeletePlan}>
@@ -111,22 +139,38 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 60, lineHeight: 22 },
   row: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: colors.card,
     borderRadius: 14,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 10,
   },
+  rowContent: { flexDirection: "row", alignItems: "center", padding: 10 },
+  missingRowContent: { flexDirection: "row", alignItems: "center", padding: 10 },
   rowIndex: { color: colors.textMuted, fontWeight: "700", width: 22, textAlign: "center" },
-  missingRow: { borderColor: colors.danger },
   missingText: { color: colors.danger, flex: 1, fontSize: 13 },
   thumb: { width: 56, height: 56, borderRadius: 10, marginRight: 12 },
   rowTitle: { color: colors.text, fontSize: 15, fontWeight: "600" },
   rowMeta: { color: colors.textMuted, fontSize: 13, marginTop: 3 },
-  supersetHint: { color: colors.warning, fontSize: 12, fontWeight: "600", marginTop: 3 },
+  supersetGroup: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: colors.warning,
+    paddingTop: 6,
+    paddingBottom: 4,
+  },
+  supersetGroupLabel: {
+    color: colors.warning,
+    fontSize: 11,
+    fontWeight: "700",
+    marginLeft: 12,
+    marginBottom: 2,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  supersetDivider: { height: 1, backgroundColor: colors.warning, opacity: 0.25, marginHorizontal: 12 },
   bottomBar: {
     position: "absolute",
     left: 0,
