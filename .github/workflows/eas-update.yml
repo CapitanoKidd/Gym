@@ -41,4 +41,9 @@ jobs:
           packager: npm
 
       - name: Pubblica l'aggiornamento sul canale "preview"
-        run: npx eas-cli update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
+        # Il messaggio del commit passa per una variabile d'ambiente (non interpolato
+        # direttamente nello script): se contenesse virgolette o altri caratteri speciali,
+        # sostituirlo a testo nudo nel comando romperebbe la sintassi della shell.
+        env:
+          UPDATE_MESSAGE: ${{ github.event.head_commit.message }}
+        run: npx eas-cli update --branch preview --message "$(echo "$UPDATE_MESSAGE" | head -1)" --non-interactive
