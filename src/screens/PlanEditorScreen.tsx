@@ -1,7 +1,18 @@
-import React, { useEffect, useLayoutEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore, makeDraftPlanExercise } from "@/store/usePlanStore";
@@ -13,12 +24,18 @@ import ExerciseThumb from "@/components/ExerciseThumb";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "PlanEditor">;
 
+// Stima usata solo come fallback quando scrollToIndex non riesce a calcolare l'offset
+// esatto (righe di altezza variabile): non deve essere precisa, solo abbastanza vicina
+// da rendere visibile il campo appena toccato.
+const ESTIMATED_ROW_HEIGHT = 200;
+
 export default function PlanEditorScreen({ route, navigation }: Props) {
   const { planId } = route.params ?? {};
   const existingPlan = usePlanStore((s) => (planId ? s.getById(planId) : undefined));
   const createPlan = usePlanStore((s) => s.createPlan);
   const updatePlan = usePlanStore((s) => s.updatePlan);
   const getExerciseById = useExerciseStore((s) => s.getById);
+  const insets = useSafeAreaInsets();
 
   const [name, setName] = useState(existingPlan?.name ?? "");
   const [draft, setDraft] = useState<PlanExercise[]>(
@@ -49,7 +66,16 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
   };
 
   const removeRow = (rowId: string) => {
-    setDraft((prev) => prev.filter((d) => d.id !== rowId));
+    setDraft((prev) => {
+      const index = prev.findIndex((d) => d.id === rowId);
+      const filtered = prev.filter((d) => d.id !== rowId);
+      // Se l'esercizio rimosso era collegato in superserie con il precedente, evita che
+      // quest'ultimo resti agganciato per sbaglio a chi ne prende il posto in lista.
+      if (index > 0 && prev[index - 1].supersetWithNext) {
+        filtered[index - 1] = { ...filtered[index - 1], supersetWithNext: false };
+      }
+      return filtered;
+    });
     setDirty(true);
   };
 
@@ -87,8 +113,41 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
     ]);
   };
 
-  const renderItem = ({ item, drag, isActive }: RenderItemParams<PlanExercise>) => {
+  // --- Porta in vista il campo appena toccato quando la tastiera copre lo schermo ---
+  // Su Android KeyboardAvoidingView da solo non basta: la lista può essere già scrollata
+  // in una posizione che finisce sotto la tastiera. Quando un campo riceve il focus,
+  // scrolliamo la lista per portarlo comodamente sopra la tastiera.
+  const listRef = useRef<any>(null);
+  const pendingScrollIndex = useRef<number | null>(null);
+
+  useEffect(() => {
+    const sub = Keyboard.addListener("keyboardDidShow", () => {
+      const idx = pendingScrollIndex.current;
+      if (idx == null) return;
+      pendingScrollIndex.current = null;
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToIndex?.({ index: idx, viewPosition: 0.3, animated: true });
+      });
+    });
+    return () => sub.remove();
+  }, []);
+
+  const scrollFieldIntoView = (index: number) => {
+    pendingScrollIndex.current = index;
+    // Se la tastiera è già aperta (si passa da un campo all'altro), "keyboardDidShow" non
+    // scatta di nuovo: tentiamo comunque lo scroll dopo un istante come fallback.
+    setTimeout(() => {
+      if (pendingScrollIndex.current !== index) return;
+      pendingScrollIndex.current = null;
+      listRef.current?.scrollToIndex?.({ index, viewPosition: 0.3, animated: true });
+    }, 250);
+  };
+
+  const renderItem = ({ item, getIndex, drag, isActive }: RenderItemParams<PlanExercise>) => {
     const exercise = getExerciseById(item.exerciseId);
+    const index = getIndex() ?? 0;
+    const nextItem = draft[index + 1];
+
     if (!exercise) {
       return (
         <ScaleDecorator>
@@ -103,16 +162,14 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
     }
     return (
       <ScaleDecorator>
-        <View style={[styles.row, isActive && styles.rowActive]}>
+        <View style={[styles.row, isActive && styles.rowActive, item.supersetWithNext && styles.rowSuperset]}>
           <View style={styles.rowHeader}>
             <Pressable
               onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: exercise.id })}
               style={styles.rowHeaderMain}
             >
               <ExerciseThumb exercise={exercise} size={44} borderRadius={8} style={styles.thumb} />
-              <Text style={styles.rowTitle} numberOfLines={2}>
-                {exercise.name}
-              </Text>
+              <Text style={styles.rowTitle}>{exercise.name}</Text>
             </Pressable>
             <Pressable onPress={() => removeRow(item.id)} style={styles.removeBtn}>
               <Text style={styles.removeBtnText}>✕</Text>
@@ -142,6 +199,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
                 style={styles.repsInput}
                 value={item.reps}
                 onChangeText={(v) => patchRow(item.id, { reps: v })}
+                onFocus={() => scrollFieldIntoView(index)}
                 placeholder="10-12"
                 placeholderTextColor={colors.textMuted}
               />
@@ -157,6 +215,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
                   const parsed = num.trim() === "" ? undefined : parseFloat(num);
                   patchRow(item.id, { weight: parsed != null && !isNaN(parsed) ? parsed : undefined });
                 }}
+                onFocus={() => scrollFieldIntoView(index)}
                 keyboardType="decimal-pad"
                 placeholder="–"
                 placeholderTextColor={colors.textMuted}
@@ -165,7 +224,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
           </View>
 
           <View style={styles.restRow}>
-            <Text style={styles.fieldLabel}>Riposo dopo l'esercizio</Text>
+            <Text style={styles.fieldLabel}>Riposo {item.supersetWithNext ? "dopo la superserie" : "dopo l'esercizio"}</Text>
             <View style={styles.stepper}>
               <Pressable
                 onPress={() => patchRow(item.id, { restSeconds: Math.max(0, item.restSeconds - 15) })}
@@ -182,6 +241,17 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
               </Pressable>
             </View>
           </View>
+
+          {nextItem && (
+            <Pressable
+              style={[styles.supersetToggle, item.supersetWithNext && styles.supersetToggleActive]}
+              onPress={() => patchRow(item.id, { supersetWithNext: !item.supersetWithNext })}
+            >
+              <Text style={[styles.supersetToggleText, item.supersetWithNext && styles.supersetToggleTextActive]}>
+                {item.supersetWithNext ? "🔗 In superserie col prossimo esercizio" : "🔗 Collega in superserie col prossimo"}
+              </Text>
+            </Pressable>
+          )}
         </View>
       </ScaleDecorator>
     );
@@ -191,7 +261,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <View style={styles.nameSection}>
@@ -210,6 +280,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
         </View>
 
         <DraggableFlatList
+          ref={listRef}
           data={draft}
           keyExtractor={(item) => item.id}
           onDragEnd={({ data }) => {
@@ -217,7 +288,13 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
             setDirty(true);
           }}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 16, paddingBottom: 160 }}
+          keyboardShouldPersistTaps="handled"
+          onScrollToIndexFailed={(info) => {
+            // Fallback quando la lista non conosce ancora l'altezza esatta della riga
+            // (righe con altezza variabile): scrolla a una stima, meglio che niente.
+            listRef.current?.scrollToOffset?.({ offset: info.index * ESTIMATED_ROW_HEIGHT, animated: true });
+          }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 180 + insets.bottom }}
           ListEmptyComponent={
             <Text style={styles.empty}>
               Nessun esercizio ancora.{"\n"}Tocca "Aggiungi esercizi" per iniziare a costruire la scheda.
@@ -225,7 +302,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
           }
         />
 
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: 16 + insets.bottom }]}>
           <Pressable style={styles.addBtn} onPress={openPicker}>
             <Text style={styles.addBtnText}>+ Aggiungi esercizi</Text>
           </Pressable>
@@ -268,12 +345,13 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   rowActive: { opacity: 0.9, borderColor: colors.primary },
+  rowSuperset: { borderColor: colors.warning },
   missingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderColor: colors.danger },
   missingText: { color: colors.danger, flex: 1, fontSize: 13 },
   rowHeader: { flexDirection: "row", alignItems: "center" },
   rowHeaderMain: { flexDirection: "row", alignItems: "center", flex: 1 },
   thumb: { width: 44, height: 44, borderRadius: 8 },
-  rowTitle: { color: colors.text, fontSize: 15, fontWeight: "600", marginLeft: 10, flex: 1 },
+  rowTitle: { color: colors.text, fontSize: 15, fontWeight: "600", marginLeft: 10, flex: 1, flexWrap: "wrap" },
   removeBtn: { padding: 8 },
   removeBtnText: { color: colors.danger, fontSize: 16 },
   dragHandle: { padding: 8 },
@@ -305,6 +383,18 @@ const styles = StyleSheet.create({
   stepBtnText: { color: colors.text, fontWeight: "700", fontSize: 16 },
   stepValue: { color: colors.text, fontSize: 14, minWidth: 30, textAlign: "center" },
   restRow: { marginTop: 12 },
+  supersetToggle: {
+    marginTop: 12,
+    borderRadius: 10,
+    paddingVertical: 9,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cardAlt,
+  },
+  supersetToggleActive: { borderColor: colors.warning, backgroundColor: "rgba(245, 166, 35, 0.12)" },
+  supersetToggleText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
+  supersetToggleTextActive: { color: colors.warning },
   bottomBar: {
     position: "absolute",
     left: 0,

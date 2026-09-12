@@ -27,11 +27,14 @@ export interface Exercise {
 export interface PlanExercise {
   id: string; // id univoco della riga nella scheda (non dell'esercizio)
   exerciseId: string;
-  restSeconds: number; // riposo dopo questo esercizio, default 60
+  restSeconds: number; // riposo tra le serie e dopo l'esercizio/superserie, default 60
   sets: number;
   reps: string;
   /** Peso suggerito in kg, opzionale */
   weight?: number;
+  /** true se questo esercizio va eseguito in superserie col successivo nella scheda
+   * (di fila, senza riposo tra loro; il riposo si applica solo dopo l'ultimo della serie). */
+  supersetWithNext?: boolean;
 }
 
 export interface WorkoutPlan {
@@ -41,18 +44,32 @@ export interface WorkoutPlan {
   createdAt: number;
 }
 
+/** Stato di una singola serie eseguita durante l'allenamento. */
+export interface SetLogEntry {
+  weight?: number;
+  completed: boolean;
+}
+
 export interface SessionLogEntry {
   note?: string;
-  weight?: number;
+  /** Una entry per ogni serie prevista dell'esercizio (indice = numero serie, 0-based). */
+  setLogs: SetLogEntry[];
 }
 
 export interface ActiveWorkout {
   planId: string;
   startedAt: number;
-  currentIndex: number;
   phase: "exercise" | "rest";
   phaseStartedAt: number;
-  /** Note/peso inseriti durante la sessione corrente, per id della riga PlanExercise */
+  /** Indice del gruppo corrente (un esercizio singolo, o una superserie di più esercizi collegati). */
+  groupIndex: number;
+  /** Indice dell'esercizio corrente all'interno del gruppo (0 se non è una superserie). */
+  memberIndex: number;
+  /** Numero di serie corrente (0-based) per l'esercizio/gruppo corrente. */
+  round: number;
+  /** Durata del riposo in corso (impostata quando si entra in fase "rest"). */
+  restTargetSeconds: number;
+  /** Log delle serie svolte in questa sessione, per id della riga PlanExercise. */
   logs: Record<string, SessionLogEntry>;
 }
 
@@ -61,7 +78,10 @@ export interface HistoryExerciseLog {
   exerciseName: string;
   sets: number;
   reps: string;
+  /** Peso "rappresentativo" (l'ultimo inserito) per compatibilità con lo storico/grafico progressi. */
   weight?: number;
+  /** Peso usato in ciascuna serie, se disponibile (una entry per serie, può contenere undefined). */
+  setWeights?: (number | undefined)[];
   note?: string;
 }
 

@@ -42,6 +42,17 @@ function getNotifications(): NotificationsModule | null {
         shouldShowList: true,
       }),
     });
+    if (Platform.OS === "android") {
+      // Su Android 8+ una notifica senza canale (o con importanza bassa) può essere
+      // ritardata o del tutto soppressa dal sistema/dal produttore del telefono: questo è
+      // il motivo più comune per cui il promemoria "allenamento in corso" a volte non
+      // arrivava. Un canale con importanza HIGH garantisce la consegna come heads-up.
+      cachedModule.setNotificationChannelAsync(WORKOUT_REMINDER_CHANNEL, {
+        name: "Allenamento in corso",
+        importance: cachedModule.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+      }).catch(() => {});
+    }
   }
   return cachedModule;
 }
@@ -61,6 +72,7 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 }
 
 const WORKOUT_REMINDER_ID = "workout-in-progress-reminder";
+const WORKOUT_REMINDER_CHANNEL = "workout-reminders";
 
 /**
  * Programma una notifica locale che ricorda che l'allenamento è ancora in corso.
@@ -80,8 +92,13 @@ export async function scheduleWorkoutReminder(elapsedLabel: string) {
     content: {
       title: "Allenamento in corso 💪",
       body: `Il cronometro è ancora attivo (${elapsedLabel}). Torna nell'app per continuare o terminare.`,
+      ...(Platform.OS === "android" ? { channelId: WORKOUT_REMINDER_CHANNEL } : {}),
     },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 2, repeats: false },
+    // trigger: null = mostra la notifica subito, invece di pianificarla tra qualche secondo.
+    // Un trigger "a tempo" dipende dal processo JS che resta vivo abbastanza a lungo per
+    // essere programmato: l'app può però essere sospesa dal sistema pochissimo dopo essere
+    // andata in background, facendo perdere la notifica in modo intermittente.
+    trigger: null,
   });
 }
 

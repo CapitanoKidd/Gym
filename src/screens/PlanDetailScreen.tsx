@@ -84,6 +84,7 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
                 <Text style={styles.rowMeta}>
                   {item.sets} serie × {item.reps} rip.{item.weight ? `  ·  ${item.weight} kg` : ""}  ·  riposo {item.restSeconds}s
                 </Text>
+                {item.supersetWithNext && <Text style={styles.supersetHint}>🔗 In superserie col prossimo</Text>}
               </View>
             </Pressable>
           );
@@ -125,6 +126,7 @@ const styles = StyleSheet.create({
   thumb: { width: 56, height: 56, borderRadius: 10, marginRight: 12 },
   rowTitle: { color: colors.text, fontSize: 15, fontWeight: "600" },
   rowMeta: { color: colors.textMuted, fontSize: 13, marginTop: 3 },
+  supersetHint: { color: colors.warning, fontSize: 12, fontWeight: "600", marginTop: 3 },
   bottomBar: {
     position: "absolute",
     left: 0,

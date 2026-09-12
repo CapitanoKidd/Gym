@@ -48,6 +48,15 @@ export default function HistoryDetailScreen({ route, navigation }: Props) {
           <Text style={styles.exerciseMeta}>
             {ex.sets} serie × {ex.reps} rip.{ex.weight ? `  ·  ${ex.weight} kg` : ""}
           </Text>
+          {ex.setWeights && ex.setWeights.some((w) => w != null) && (
+            <View style={styles.setWeightsRow}>
+              {ex.setWeights.map((w, si) => (
+                <View key={si} style={styles.setWeightChip}>
+                  <Text style={styles.setWeightChipText}>{w != null ? `${w} kg` : "–"}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           {!!ex.note && (
             <View style={styles.noteBox}>
               <Text style={styles.noteText}>📝 {ex.note}</Text>
@@ -78,6 +87,9 @@ const styles = StyleSheet.create({
   },
   exerciseName: { color: colors.text, fontSize: 15, fontWeight: "700" },
   exerciseMeta: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+  setWeightsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  setWeightChip: { backgroundColor: colors.cardAlt, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  setWeightChipText: { color: colors.text, fontSize: 12, fontWeight: "600" },
   noteBox: { marginTop: 8, backgroundColor: colors.cardAlt, borderRadius: 8, padding: 10 },
   noteText: { color: colors.text, fontSize: 13, lineHeight: 19 },
   deleteBtn: {

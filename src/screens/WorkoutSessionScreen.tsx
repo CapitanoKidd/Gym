@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   AppState,
@@ -8,6 +8,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -25,13 +26,21 @@ import { useHistoryStore } from "@/store/useHistoryStore";
 import { colors } from "@/theme";
 import { formatDuration } from "@/utils/time";
 import { cancelWorkoutReminder, scheduleWorkoutReminder } from "@/utils/notifications";
+import { buildExerciseGroups, isLastSetOfMember } from "@/utils/supersets";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
-import { HistoryExerciseLog } from "@/types";
+import { HistoryExerciseLog, PlanExercise } from "@/types";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import { useRestEndSound } from "@/utils/sound";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "WorkoutSession">;
+
+function parseWeightInput(text: string): number | undefined {
+  const num = text.replace(",", ".").trim();
+  if (num === "") return undefined;
+  const parsed = parseFloat(num);
+  return isNaN(parsed) ? undefined : parsed;
+}
 
 export default function WorkoutSessionScreen({ route, navigation }: Props) {
   // Tiene lo schermo acceso per tutta la durata dell'allenamento: durante il riposo
@@ -54,24 +63,24 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const active = useSessionStore((s) => s.active);
   const startWorkout = useSessionStore((s) => s.startWorkout);
   const endWorkout = useSessionStore((s) => s.endWorkout);
-  const setPhase = useSessionStore((s) => s.setPhase);
-  const nextExercise = useSessionStore((s) => s.nextExercise);
+  const completeCurrentSet = useSessionStore((s) => s.completeCurrentSet);
+  const skipRest = useSessionStore((s) => s.skipRest);
+  const setSetWeight = useSessionStore((s) => s.setSetWeight);
   const setNote = useSessionStore((s) => s.setNote);
-  const setWeight = useSessionStore((s) => s.setWeight);
 
   const [now, setNow] = useState(Date.now());
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
-  const [weightDraft, setWeightDraft] = useState("");
+  const [weightInput, setWeightInput] = useState("");
 
   // Avvia la sessione se non è già attiva per questa scheda
   useEffect(() => {
-    if (!active || active.planId !== planId) {
-      startWorkout(planId);
+    if (plan && (!active || active.planId !== planId)) {
+      startWorkout(plan);
     }
     navigation.setOptions({ gestureEnabled: false, headerBackVisible: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [plan]);
 
   // Tick del cronometro
   useEffect(() => {
@@ -98,45 +107,78 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
 
   const ready = !!plan && !!active && active.planId === planId;
 
-  const currentEntry = ready ? plan!.exercises[active!.currentIndex] : undefined;
-  const nextEntry = ready ? plan!.exercises[active!.currentIndex + 1] : undefined;
-  const currentExercise = currentEntry ? getExerciseById(currentEntry.exerciseId) : undefined;
-  const nextExerciseData = nextEntry ? getExerciseById(nextEntry.exerciseId) : undefined;
+  const groups = useMemo(() => (plan ? buildExerciseGroups(plan.exercises) : []), [plan]);
+  const currentGroup = ready ? groups[active!.groupIndex] : undefined;
+  const currentMember: PlanExercise | undefined = currentGroup?.[active!.memberIndex];
+  const currentExercise = currentMember ? getExerciseById(currentMember.exerciseId) : undefined;
+  const currentLog = currentMember ? active?.logs[currentMember.id] : undefined;
+  const isSuperset = (currentGroup?.length ?? 0) > 1;
+  const partnerNames = isSuperset
+    ? currentGroup!
+        .filter((m) => m.id !== currentMember?.id)
+        .map((m) => getExerciseById(m.exerciseId)?.name ?? "Esercizio")
+    : [];
+
+  // Peso da suggerire per la serie corrente: quello inserito nella serie precedente di
+  // questo esercizio in questa sessione, altrimenti quello impostato nella scheda,
+  // altrimenti l'ultimo peso usato per questo esercizio nello storico.
+  const suggestedWeight = useMemo(() => {
+    if (!currentMember || !active) return undefined;
+    const prevRoundWeight = currentLog?.setLogs
+      .slice(0, active.round)
+      .reverse()
+      .find((s) => s.weight != null)?.weight;
+    return prevRoundWeight ?? currentMember.weight ?? getLastWeightForExercise(currentMember.exerciseId);
+  }, [currentMember, currentLog, active?.round, getLastWeightForExercise]);
+  const isWeightFromHistory =
+    currentMember?.weight == null &&
+    active != null &&
+    currentLog?.setLogs.slice(0, active.round).every((s) => s.weight == null) &&
+    suggestedWeight != null;
+
+  // Precompila il campo peso della serie corrente quando cambia esercizio/round
+  useEffect(() => {
+    if (!ready || active!.phase !== "exercise") return;
+    const existing = currentLog?.setLogs[active!.round]?.weight;
+    setWeightInput(existing != null ? String(existing) : suggestedWeight != null ? String(suggestedWeight) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, active?.phase, active?.groupIndex, active?.memberIndex, active?.round]);
 
   const totalElapsedSeconds = ready ? (now - active!.startedAt) / 1000 : 0;
   const phaseElapsedSeconds = ready ? (now - active!.phaseStartedAt) / 1000 : 0;
-  const isLast = ready ? active!.currentIndex >= plan!.exercises.length - 1 : false;
-  const restTarget = currentEntry?.restSeconds ?? 60;
+  const restTarget = active?.restTargetSeconds ?? 60;
   const restRemaining = Math.max(0, restTarget - phaseElapsedSeconds);
-  const currentLog = currentEntry ? active?.logs[currentEntry.id] : undefined;
-  // Peso da mostrare/suggerire: quello già inserito in questa sessione, altrimenti quello
-  // impostato nella scheda, altrimenti l'ultimo peso usato per questo esercizio nello storico.
-  const lastKnownWeight = currentEntry ? getLastWeightForExercise(currentEntry.exerciseId) : undefined;
-  const suggestedWeight = currentLog?.weight ?? currentEntry?.weight ?? lastKnownWeight;
-  const isWeightFromHistory = currentLog?.weight == null && currentEntry?.weight == null && lastKnownWeight != null;
+
+  // Progresso complessivo mostrato in alto: quale esercizio della scheda (in ordine) è in corso.
+  const overallIndex = plan && currentMember ? plan.exercises.findIndex((e) => e.id === currentMember.id) : -1;
+  const overallTotal = plan?.exercises.length ?? 0;
 
   const finishWorkout = (skipConfirm = false) => {
     const doFinish = () => {
       cancelWorkoutReminder();
-      if (ready) {
-        const exercises: HistoryExerciseLog[] = plan!.exercises
-          .slice(0, active!.currentIndex + 1)
-          .map((pe) => {
-            const ex = getExerciseById(pe.exerciseId);
+      if (ready && plan) {
+        const exercises: HistoryExerciseLog[] = plan.exercises
+          .map((pe): HistoryExerciseLog | null => {
             const log = active!.logs[pe.id];
+            const completedSets = log?.setLogs.filter((s) => s.completed) ?? [];
+            if (completedSets.length === 0) return null;
+            const ex = getExerciseById(pe.exerciseId);
+            const lastWeight = [...completedSets].reverse().find((s) => s.weight != null)?.weight;
             return {
               exerciseId: pe.exerciseId,
               exerciseName: ex?.name ?? "Esercizio",
-              sets: pe.sets,
+              sets: completedSets.length,
               reps: pe.reps,
-              weight: log?.weight ?? pe.weight,
+              weight: lastWeight,
+              setWeights: log.setLogs.map((s) => s.weight),
               note: log?.note,
             };
-          });
+          })
+          .filter((e): e is HistoryExerciseLog => e != null);
         addHistoryEntry({
           id: uuidv4(),
-          planId: plan!.id,
-          planName: plan!.name,
+          planId: plan.id,
+          planName: plan.name,
           startedAt: active!.startedAt,
           endedAt: Date.now(),
           durationSeconds: Math.round((Date.now() - active!.startedAt) / 1000),
@@ -167,45 +209,34 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
-  const goToRest = () => {
-    if (isLast) {
-      finishWorkout(true);
-      return;
-    }
-    setPhase("rest");
-  };
-
-  const goToNextExercise = () => {
-    if (!active) return;
-    if (isLast) {
-      finishWorkout(true);
-      return;
-    }
-    nextExercise(active.currentIndex + 1);
-  };
-
-  // Passa automaticamente al prossimo esercizio quando il riposo finisce, con vibrazione + beep
+  // Passa automaticamente alla serie/esercizio successivo quando il riposo finisce, con vibrazione + beep
   useEffect(() => {
     if (ready && active!.phase === "rest" && restRemaining <= 0) {
       Vibration.vibrate([0, 250, 120, 250]);
       playRestEndSound();
-      goToNextExercise();
+      skipRest();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, active?.phase, restRemaining]);
 
+  const handleCompleteSet = () => {
+    if (!plan) return;
+    const weight = parseWeightInput(weightInput);
+    const more = completeCurrentSet(plan, weight);
+    if (!more) {
+      finishWorkout(true);
+    }
+  };
+
   const openNoteModal = () => {
-    if (!currentEntry) return;
+    if (!currentMember) return;
     setNoteDraft(currentLog?.note ?? "");
-    setWeightDraft(suggestedWeight != null ? String(suggestedWeight) : "");
     setNoteModalVisible(true);
   };
 
   const saveNoteModal = () => {
-    if (!currentEntry) return;
-    setNote(currentEntry.id, noteDraft.trim());
-    const parsedWeight = parseFloat(weightDraft.replace(",", "."));
-    setWeight(currentEntry.id, weightDraft.trim() === "" || isNaN(parsedWeight) ? undefined : parsedWeight);
+    if (!currentMember) return;
+    setNote(currentMember.id, noteDraft.trim());
     setNoteModalVisible(false);
   };
 
@@ -217,65 +248,122 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
     );
   }
 
-  const currentPlan = plan!;
   const currentActive = active!;
+  const isLastSet = currentGroup && currentMember ? isLastSetOfMember(currentGroup, currentActive.memberIndex, currentActive.round) : true;
+
+  // Prossimo esercizio da mostrare durante il riposo (chi tocca dopo, tra un round e l'altro
+  // o all'inizio del gruppo successivo).
+  const nextGroup = groups[currentActive.groupIndex];
+  const nextMember = nextGroup?.[currentActive.memberIndex];
+  const nextExerciseData = nextMember ? getExerciseById(nextMember.exerciseId) : undefined;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.chrono}>{formatDuration(totalElapsedSeconds)}</Text>
         <Text style={styles.progress}>
-          Esercizio {currentActive.currentIndex + 1} / {currentPlan.exercises.length}
+          Esercizio {overallIndex >= 0 ? overallIndex + 1 : "-"} / {overallTotal}
         </Text>
       </View>
 
-      {currentActive.phase === "exercise" && currentExercise && (
-        <View style={styles.body}>
-          <ExerciseThumb exercise={currentExercise} size={220} borderRadius={20} style={styles.image} />
-          <Text style={styles.exerciseName}>{currentExercise.name}</Text>
+      {currentActive.phase === "exercise" && currentMember && (
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
+          {currentExercise ? (
+            <>
+              <ExerciseThumb exercise={currentExercise} size={140} borderRadius={18} style={styles.image} />
+              <Text style={styles.exerciseName}>{currentExercise.name}</Text>
+            </>
+          ) : (
+            <Text style={styles.missingExerciseText}>⚠️ Esercizio eliminato dalla libreria</Text>
+          )}
+
+          {isSuperset && (
+            <View style={styles.supersetBadge}>
+              <Text style={styles.supersetBadgeText}>🔗 Superserie con: {partnerNames.join(", ")}</Text>
+            </View>
+          )}
+
           <Text style={styles.setsReps}>
-            {currentEntry?.sets ?? "-"} serie × {currentEntry?.reps ?? "-"} ripetizioni
-            {suggestedWeight != null ? `  ·  ${suggestedWeight} kg` : ""}
+            {currentMember.sets} serie × {currentMember.reps} ripetizioni
           </Text>
-          {isWeightFromHistory && <Text style={styles.suggestedHint}>💡 Ultima volta: {suggestedWeight} kg</Text>}
-          <View style={styles.actionRow}>
-            <Pressable
-              onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: currentExercise.id })}
-            >
+
+          {currentExercise && (
+            <Pressable onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: currentExercise.id })}>
               <Text style={styles.infoLink}>Come si esegue →</Text>
             </Pressable>
-            <Pressable onPress={openNoteModal} style={styles.noteBtn}>
-              <Text style={styles.noteBtnText}>{currentLog?.note ? "📝 Nota salvata" : "📝 Aggiungi nota / peso"}</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+          )}
 
-      {currentActive.phase === "exercise" && !currentExercise && (
-        <View style={styles.body}>
-          <Text style={styles.missingExerciseText}>
-            ⚠️ Questo esercizio è stato eliminato dalla libreria.{"\n"}Puoi comunque proseguire l'allenamento.
-          </Text>
-        </View>
+          {/* Le serie: quelle già fatte restano visibili col peso (modificabile), quella
+              corrente ha il campo peso in evidenza + il tasto per completarla, quelle
+              future sono solo un'anteprima. */}
+          <View style={styles.setsCard}>
+            {Array.from({ length: currentMember.sets }).map((_, round) => {
+              const setLog = currentLog?.setLogs[round];
+              const isDone = round < currentActive.round || (round === currentActive.round && setLog?.completed);
+              const isCurrent = round === currentActive.round && !setLog?.completed;
+              const isUpcoming = round > currentActive.round;
+
+              if (isUpcoming) {
+                return (
+                  <View key={round} style={[styles.setRow, styles.setRowUpcoming]}>
+                    <Text style={styles.setRowLabelMuted}>Serie {round + 1}</Text>
+                    <Text style={styles.setRowMuted}>{currentMember.reps} rip.</Text>
+                  </View>
+                );
+              }
+
+              return (
+                <View key={round} style={[styles.setRow, isCurrent && styles.setRowCurrent]}>
+                  <Text style={[styles.setRowLabel, isCurrent && styles.setRowLabelCurrent]}>
+                    {isDone ? "✅" : "▶️"} Serie {round + 1}
+                  </Text>
+                  <View style={styles.weightFieldWrap}>
+                    <TextInput
+                      style={[styles.weightInput, isCurrent && styles.weightInputCurrent]}
+                      value={isCurrent ? weightInput : setLog?.weight != null ? String(setLog.weight) : ""}
+                      onChangeText={(v) => {
+                        if (isCurrent) {
+                          setWeightInput(v);
+                        } else {
+                          setSetWeight(currentMember.id, round, parseWeightInput(v));
+                        }
+                      }}
+                      keyboardType="decimal-pad"
+                      placeholder="peso"
+                      placeholderTextColor={colors.textMuted}
+                    />
+                    <Text style={styles.weightUnit}>kg</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {isWeightFromHistory && <Text style={styles.suggestedHint}>💡 Ultima volta: {suggestedWeight} kg</Text>}
+
+          <Pressable onPress={openNoteModal} style={styles.noteBtn}>
+            <Text style={styles.noteBtnText}>{currentLog?.note ? "📝 Nota salvata" : "📝 Nota (opzionale)"}</Text>
+          </Pressable>
+        </ScrollView>
       )}
 
       {currentActive.phase === "rest" && (
         <View style={styles.body}>
           <Text style={styles.restTitle}>Riposo</Text>
           <Text style={styles.restCountdown}>{formatDuration(restRemaining)}</Text>
-          {nextExerciseData && (
-            <Text style={styles.nextUp}>Prossimo: {nextExerciseData.name}</Text>
-          )}
+          {nextExerciseData && <Text style={styles.nextUp}>Prossimo: {nextExerciseData.name}</Text>}
         </View>
       )}
 
       <View style={styles.controls}>
         {currentActive.phase === "exercise" ? (
-          <Pressable style={styles.primaryBtn} onPress={goToRest}>
-            <Text style={styles.primaryBtnText}>{isLast ? "Termina esercizio" : "Esercizio completato →"}</Text>
+          <Pressable style={styles.primaryBtn} onPress={handleCompleteSet}>
+            <Text style={styles.primaryBtnText}>
+              {isLastSet ? "✅ Esercizio completato" : "✅ Serie completata"}
+            </Text>
           </Pressable>
         ) : (
-          <Pressable style={styles.primaryBtn} onPress={goToNextExercise}>
+          <Pressable style={styles.primaryBtn} onPress={skipRest}>
             <Text style={styles.primaryBtnText}>Salta riposo →</Text>
           </Pressable>
         )}
@@ -287,21 +375,11 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
       <Modal visible={noteModalVisible} transparent animationType="fade" onRequestClose={() => setNoteModalVisible(false)}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
         >
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{currentExercise?.name}</Text>
-
-            <Text style={styles.modalLabel}>Peso usato (kg)</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={weightDraft}
-              onChangeText={setWeightDraft}
-              keyboardType="decimal-pad"
-              placeholder="Es. 40"
-              placeholderTextColor={colors.textMuted}
-            />
 
             <Text style={styles.modalLabel}>Nota</Text>
             <TextInput
@@ -329,19 +407,67 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, padding: 20, justifyContent: "space-between" },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: 20 },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 60 },
-  header: { alignItems: "center", marginTop: 10 },
+  header: { alignItems: "center", marginBottom: 6 },
   chrono: { color: colors.text, fontSize: 42, fontWeight: "700", fontVariant: ["tabular-nums"] },
   progress: { color: colors.textMuted, marginTop: 4 },
-  body: { alignItems: "center", justifyContent: "center", flex: 1 },
-  image: { width: 220, height: 220, borderRadius: 20, marginBottom: 20 },
-  exerciseName: { color: colors.text, fontSize: 26, fontWeight: "700", textAlign: "center" },
-  setsReps: { color: colors.textMuted, fontSize: 16, marginTop: 8 },
-  suggestedHint: { color: colors.warning, fontSize: 13, marginTop: 6, fontWeight: "600" },
-  missingExerciseText: { color: colors.danger, fontSize: 16, textAlign: "center", lineHeight: 24 },
-  actionRow: { alignItems: "center", marginTop: 18, gap: 14 },
-  infoLink: { color: colors.primary, fontWeight: "600" },
+  body: { flex: 1 },
+  bodyContent: { alignItems: "center", paddingHorizontal: 20, paddingBottom: 20 },
+  image: { width: 140, height: 140, borderRadius: 18, marginTop: 6, marginBottom: 12 },
+  exerciseName: { color: colors.text, fontSize: 22, fontWeight: "700", textAlign: "center" },
+  supersetBadge: {
+    marginTop: 8,
+    backgroundColor: "rgba(245, 166, 35, 0.15)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  supersetBadgeText: { color: colors.warning, fontSize: 12, fontWeight: "700", textAlign: "center" },
+  setsReps: { color: colors.textMuted, fontSize: 15, marginTop: 8 },
+  suggestedHint: { color: colors.warning, fontSize: 13, marginTop: 10, fontWeight: "600" },
+  missingExerciseText: { color: colors.danger, fontSize: 16, textAlign: "center", lineHeight: 24, marginTop: 20 },
+  infoLink: { color: colors.primary, fontWeight: "600", marginTop: 10 },
+  setsCard: {
+    width: "100%",
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 18,
+    overflow: "hidden",
+  },
+  setRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  setRowUpcoming: { opacity: 0.5 },
+  setRowCurrent: { backgroundColor: "rgba(52, 199, 89, 0.08)" },
+  setRowLabel: { color: colors.text, fontSize: 15, fontWeight: "600" },
+  setRowLabelCurrent: { color: colors.success },
+  setRowLabelMuted: { color: colors.textMuted, fontSize: 15, fontWeight: "600" },
+  setRowMuted: { color: colors.textMuted, fontSize: 13 },
+  weightFieldWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
+  weightInput: {
+    backgroundColor: colors.cardAlt,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+    fontSize: 16,
+    fontWeight: "700",
+    minWidth: 76,
+    textAlign: "center",
+  },
+  weightInputCurrent: { borderColor: colors.success, borderWidth: 2 },
+  weightUnit: { color: colors.textMuted, fontSize: 13 },
   noteBtn: {
     backgroundColor: colors.cardAlt,
     borderRadius: 12,
@@ -349,12 +475,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: colors.border,
+    marginTop: 16,
   },
   noteBtnText: { color: colors.text, fontWeight: "600", fontSize: 13 },
-  restTitle: { color: colors.textMuted, fontSize: 20, fontWeight: "600" },
-  restCountdown: { color: colors.warning, fontSize: 64, fontWeight: "800", marginTop: 12, fontVariant: ["tabular-nums"] },
-  nextUp: { color: colors.text, fontSize: 16, marginTop: 20 },
-  controls: { gap: 12, marginBottom: 10 },
+  restTitle: { color: colors.textMuted, fontSize: 20, fontWeight: "600", textAlign: "center", marginTop: 60 },
+  restCountdown: { color: colors.warning, fontSize: 64, fontWeight: "800", marginTop: 12, fontVariant: ["tabular-nums"], textAlign: "center" },
+  nextUp: { color: colors.text, fontSize: 16, marginTop: 20, textAlign: "center" },
+  controls: { gap: 12, paddingHorizontal: 20, paddingBottom: 10, paddingTop: 10 },
   primaryBtn: { backgroundColor: colors.success, borderRadius: 14, paddingVertical: 16, alignItems: "center" },
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 17 },
   stopBtn: { backgroundColor: "transparent", borderRadius: 14, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: colors.danger },
