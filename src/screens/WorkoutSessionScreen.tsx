@@ -25,7 +25,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useHistoryStore } from "@/store/useHistoryStore";
 import { colors } from "@/theme";
 import { formatDuration } from "@/utils/time";
-import { cancelWorkoutReminder, scheduleWorkoutReminder } from "@/utils/notifications";
+import { cancelWorkoutReminder, scheduleRestEndReminder, scheduleWorkoutReminder } from "@/utils/notifications";
 import { buildExerciseGroups, isLastSetOfMember } from "@/utils/supersets";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
@@ -72,6 +72,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [weightInput, setWeightInput] = useState("");
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
 
   // Avvia la sessione se non è già attiva per questa scheda
   useEffect(() => {
@@ -88,14 +89,22 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
     return () => clearInterval(id);
   }, []);
 
-  // Notifica promemoria quando l'app va in background durante l'allenamento
+  // Notifica promemoria quando l'app va in background durante l'allenamento: durante il
+  // riposo avvisa esattamente al termine del recupero (il conto alla rovescia "continua"
+  // perché a farlo scattare è il sistema operativo, non un timer JS che si fermerebbe in
+  // background); durante l'esercizio ricorda solo che il cronometro è ancora attivo.
   const appState = useRef(AppState.currentState);
   useEffect(() => {
     const sub = AppState.addEventListener("change", (next: AppStateStatus) => {
       if (appState.current === "active" && next.match(/inactive|background/)) {
         if (active) {
-          const elapsed = formatDuration((Date.now() - active.startedAt) / 1000);
-          scheduleWorkoutReminder(elapsed);
+          if (active.phase === "rest") {
+            const remaining = active.restTargetSeconds - (Date.now() - active.phaseStartedAt) / 1000;
+            scheduleRestEndReminder(remaining);
+          } else {
+            const elapsed = formatDuration((Date.now() - active.startedAt) / 1000);
+            scheduleWorkoutReminder(elapsed);
+          }
         }
       } else if (next === "active") {
         cancelWorkoutReminder();
@@ -264,6 +273,11 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
         <Text style={styles.progress}>
           Esercizio {overallIndex >= 0 ? overallIndex + 1 : "-"} / {overallTotal}
         </Text>
+        {overallIndex > 0 && (
+          <Pressable onPress={() => setHistoryModalVisible(true)} style={styles.historyLink}>
+            <Text style={styles.historyLinkText}>📋 Esercizi svolti finora</Text>
+          </Pressable>
+        )}
       </View>
 
       {currentActive.phase === "exercise" && currentMember && (
@@ -402,6 +416,49 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <Modal
+        visible={historyModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setHistoryModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, styles.historyModalCard]}>
+            <Text style={styles.modalTitle}>Esercizi svolti finora</Text>
+            <ScrollView contentContainerStyle={{ paddingBottom: 4 }}>
+              {plan!.exercises.slice(0, overallIndex).map((pe) => {
+                const ex = getExerciseById(pe.exerciseId);
+                const log = active?.logs[pe.id];
+                return (
+                  <View key={pe.id} style={styles.historyExerciseRow}>
+                    <Text style={styles.historyExerciseName}>{ex?.name ?? "Esercizio eliminato"}</Text>
+                    <View style={styles.setWeightsRow}>
+                      {(log?.setLogs ?? []).map((s, round) => (
+                        <View key={round} style={styles.historyChipWrap}>
+                          <Text style={styles.historyChipLabel}>S{round + 1}</Text>
+                          <TextInput
+                            style={styles.historyChipInput}
+                            value={s.weight != null ? String(s.weight) : ""}
+                            onChangeText={(v) => setSetWeight(pe.id, round, parseWeightInput(v))}
+                            keyboardType="decimal-pad"
+                            placeholder="–"
+                            placeholderTextColor={colors.textMuted}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                    {!!log?.note && <Text style={styles.historyNote}>📝 {log.note}</Text>}
+                  </View>
+                );
+              })}
+            </ScrollView>
+            <Pressable style={styles.modalConfirm} onPress={() => setHistoryModalVisible(false)}>
+              <Text style={styles.modalConfirmText}>Chiudi</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -412,6 +469,8 @@ const styles = StyleSheet.create({
   header: { alignItems: "center", marginBottom: 6 },
   chrono: { color: colors.text, fontSize: 42, fontWeight: "700", fontVariant: ["tabular-nums"] },
   progress: { color: colors.textMuted, marginTop: 4 },
+  historyLink: { marginTop: 8 },
+  historyLinkText: { color: colors.primary, fontWeight: "600", fontSize: 13 },
   body: { flex: 1 },
   bodyContent: { alignItems: "center", paddingHorizontal: 20, paddingBottom: 20 },
   image: { width: 140, height: 140, borderRadius: 18, marginTop: 6, marginBottom: 12 },
@@ -488,6 +547,25 @@ const styles = StyleSheet.create({
   stopBtnText: { color: colors.danger, fontWeight: "700" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 24 },
   modalCard: { backgroundColor: colors.card, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
+  historyModalCard: { maxHeight: "80%" },
+  historyExerciseRow: { marginBottom: 16 },
+  historyExerciseName: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 6 },
+  setWeightsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  historyChipWrap: { alignItems: "center" },
+  historyChipLabel: { color: colors.textMuted, fontSize: 10, marginBottom: 2 },
+  historyChipInput: {
+    backgroundColor: colors.cardAlt,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+    fontSize: 13,
+    minWidth: 52,
+    textAlign: "center",
+  },
+  historyNote: { color: colors.textMuted, fontSize: 12, marginTop: 6, fontStyle: "italic" },
   modalTitle: { color: colors.text, fontSize: 17, fontWeight: "700", marginBottom: 14 },
   modalLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 6, marginTop: 10 },
   modalInput: {

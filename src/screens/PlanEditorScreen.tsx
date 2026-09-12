@@ -120,14 +120,20 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
   const listRef = useRef<any>(null);
   const pendingScrollIndex = useRef<number | null>(null);
 
+  // viewPosition 1 = allinea il FONDO della card al fondo dell'area visibile (sopra la
+  // tastiera): con la card di Serie/Ripetizioni/Peso + Riposo, il campo toccato di solito
+  // sta in alto nella card, quindi allineare il fondo è ciò che garantisce che anche lo
+  // stepper del riposo, più in basso nella stessa card, resti visibile e toccabile.
+  const scrollToCard = (index: number) => {
+    listRef.current?.scrollToIndex?.({ index, viewPosition: 1, animated: true });
+  };
+
   useEffect(() => {
     const sub = Keyboard.addListener("keyboardDidShow", () => {
       const idx = pendingScrollIndex.current;
       if (idx == null) return;
       pendingScrollIndex.current = null;
-      requestAnimationFrame(() => {
-        listRef.current?.scrollToIndex?.({ index: idx, viewPosition: 0.3, animated: true });
-      });
+      requestAnimationFrame(() => requestAnimationFrame(() => scrollToCard(idx)));
     });
     return () => sub.remove();
   }, []);
@@ -139,7 +145,7 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
     setTimeout(() => {
       if (pendingScrollIndex.current !== index) return;
       pendingScrollIndex.current = null;
-      listRef.current?.scrollToIndex?.({ index, viewPosition: 0.3, animated: true });
+      scrollToCard(index);
     }, 250);
   };
 

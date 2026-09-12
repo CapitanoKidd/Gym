@@ -72,11 +72,13 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 }
 
 const WORKOUT_REMINDER_ID = "workout-in-progress-reminder";
+const REST_END_REMINDER_ID = "workout-rest-end-reminder";
 const WORKOUT_REMINDER_CHANNEL = "workout-reminders";
 
 /**
  * Programma una notifica locale che ricorda che l'allenamento è ancora in corso.
- * Va chiamata quando l'app passa in background mentre una sessione è attiva.
+ * Va chiamata quando l'app passa in background durante la fase "esercizio" (fuori dal
+ * riposo, dove invece si usa scheduleRestEndReminder qui sotto).
  */
 export async function scheduleWorkoutReminder(elapsedLabel: string) {
   const Notifications = getNotifications();
@@ -102,9 +104,43 @@ export async function scheduleWorkoutReminder(elapsedLabel: string) {
   });
 }
 
+/**
+ * Programma una notifica locale per il momento esatto in cui finisce il riposo tra le
+ * serie, così il timer "continua" anche se l'app va in background: non è JS a contare i
+ * secondi (si fermerebbe), ma il sistema operativo, che alla scadenza mostra la notifica
+ * (con vibrazione, dal canale ad importanza alta). Va chiamata quando l'app passa in
+ * background mentre la fase corrente è "riposo".
+ */
+export async function scheduleRestEndReminder(remainingSeconds: number) {
+  const Notifications = getNotifications();
+  if (!Notifications) return;
+  if (remainingSeconds <= 0) return;
+
+  const granted = await ensureNotificationPermission();
+  if (!granted) return;
+
+  await cancelWorkoutReminder();
+
+  await Notifications.scheduleNotificationAsync({
+    identifier: REST_END_REMINDER_ID,
+    content: {
+      title: "Recupero terminato ⏱️",
+      body: "Il riposo è finito: torna nell'app per la prossima serie!",
+      ...(Platform.OS === "android" ? { channelId: WORKOUT_REMINDER_CHANNEL } : {}),
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.max(1, Math.round(remainingSeconds)),
+      repeats: false,
+    },
+  });
+}
+
 export async function cancelWorkoutReminder() {
   const Notifications = getNotifications();
   if (!Notifications) return;
   await Notifications.cancelScheduledNotificationAsync(WORKOUT_REMINDER_ID).catch(() => {});
+  await Notifications.cancelScheduledNotificationAsync(REST_END_REMINDER_ID).catch(() => {});
   await Notifications.dismissNotificationAsync(WORKOUT_REMINDER_ID).catch(() => {});
+  await Notifications.dismissNotificationAsync(REST_END_REMINDER_ID).catch(() => {});
 }
