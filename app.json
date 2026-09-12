@@ -27,12 +27,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#111318"
       },
-      "permissions": [
-        "NOTIFICATIONS",
-        "SCHEDULE_EXACT_ALARM",
-        "NOTIFICATIONS",
-        "SCHEDULE_EXACT_ALARM"
-      ]
+      "permissions": ["NOTIFICATIONS", "SCHEDULE_EXACT_ALARM"]
     },
     "plugins": [
       [
