@@ -22,6 +22,29 @@ npm run start
 
 Scansiona il QR code con Expo Go (Android) o con la fotocamera (iOS) per aprire l'app sul telefono, sulla stessa rete Wi-Fi del computer.
 
+## Provare l'app senza PC acceso (QR fisso, sempre aggiornato)
+
+Con l'avvio in locale qui sopra, il QR code funziona solo finché `npm run start` resta acceso sullo stesso Wi-Fi del telefono. Per un QR **fisso** che scansioni una volta sola e che da lì in poi mostra sempre l'ultima versione pubblicata — senza `git pull`, `npm install` o un PC acceso — questo repo è già predisposto per **EAS Update**: una GitHub Action (`.github/workflows/eas-update.yml`) pubblica automaticamente un aggiornamento ogni volta che viene pushata una modifica su questo branch.
+
+Serve un piccolo setup iniziale, **una tantum**, perché richiede un account Expo che deve restare tuo:
+
+1. Crea un account gratuito su [expo.dev](https://expo.dev).
+2. Nella cartella del progetto, in locale:
+   ```bash
+   npx eas-cli login
+   npx eas-cli update:configure
+   npx eas-cli channel:create preview
+   ```
+   Il secondo comando modifica `app.json` aggiungendo l'id del progetto: **committa e pusha** quella modifica.
+3. Su expo.dev vai su **Account Settings → Access Tokens** e crea un token.
+4. Nel repository GitHub: **Settings → Secrets and variables → Actions → New repository secret**, nome `EXPO_TOKEN`, incolla il token.
+5. Fai un push qualsiasi (o lancia manualmente il workflow da GitHub → Actions → "Pubblica aggiornamento EAS" → Run workflow): la Action pubblica il primo aggiornamento sul canale `preview`.
+6. Su expo.dev apri il progetto → **Updates** → canale `preview` → **View QR code**: scansionalo una volta con Expo Go.
+
+Da quel momento, ogni volta che una modifica viene pushata su questo branch, l'app sul telefono si aggiorna da sola alla riapertura (o al più al successivo controllo automatico) — nessuna azione richiesta.
+
+⚠️ Un limite da tenere presente: EAS Update aggiorna solo il codice JavaScript, non la versione di Expo Go stessa. Finché resto dentro ai moduli già inclusi in Expo Go per SDK 57 (praticamente tutto quello che uso in questo progetto), l'aggiornamento automatico funziona senza problemi. Se in futuro servisse un nuovo SDK Expo (come è già successo passando da SDK 51 a 57) o un modulo nativo che Expo Go non include, quello non passa dall'aggiornamento automatico: te lo segnalo esplicitamente quando capita.
+
 ## Note
 
 - I dati (esercizi, schede, storico) sono salvati **localmente sul dispositivo** con AsyncStorage: nessun account, nessun server. Usa "Esporta backup" in Impostazioni per avere una copia di sicurezza condivisibile (es. su Drive/email) in caso di reinstallazione o cambio telefono.

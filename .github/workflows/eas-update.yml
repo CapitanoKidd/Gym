@@ -1,0 +1,43 @@
+name: Pubblica aggiornamento EAS
+
+# Pubblica automaticamente un aggiornamento OTA (EAS Update) ogni volta che c'è un push
+# su questo branch, così l'app sul QR code/link salvato in Expo Go mostra sempre l'ultima
+# versione senza bisogno di git pull, npm install o un server locale acceso.
+#
+# Setup richiesto (una tantum, vedi README.md "Provare l'app senza PC acceso"):
+# 1. Account Expo gratuito su expo.dev
+# 2. In locale: npx eas-cli login, poi npx eas-cli update:configure
+# 3. npx eas-cli channel:create preview (crea il canale "preview" usato qui sotto)
+# 4. Creare un Access Token su expo.dev (Account Settings -> Access Tokens)
+# 5. Salvarlo come secret del repository GitHub: Settings -> Secrets and variables ->
+#    Actions -> New repository secret, nome EXPO_TOKEN
+
+on:
+  push:
+    branches:
+      - claude/gym-workout-app-29ffkz
+  workflow_dispatch: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Pubblica l'aggiornamento sul canale "preview"
+        run: npx eas-cli update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
