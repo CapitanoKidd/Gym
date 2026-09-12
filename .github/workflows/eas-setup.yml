@@ -1,0 +1,68 @@
+name: Setup EAS (una tantum)
+
+# Da lanciare UNA SOLA VOLTA, a mano, da GitHub -> Actions -> "Setup EAS (una tantum)" ->
+# "Run workflow" (funziona anche dal browser del telefono, niente terminale/PC richiesto).
+# Crea il progetto EAS, lo configura per gli aggiornamenti OTA, crea il canale "preview" e
+# pubblica il primo aggiornamento. Da quel momento in poi basta il workflow
+# eas-update.yml (già automatico ad ogni push) per tenere l'app aggiornata.
+#
+# Prerequisiti:
+# - Il secret EXPO_TOKEN già impostato (Settings -> Secrets and variables -> Actions)
+# - Settings -> Actions -> General -> "Workflow permissions" impostato su
+#   "Read and write permissions" (serve per far salvare a questo workflow la
+#   configurazione generata in app.json)
+
+on:
+  workflow_dispatch:
+    inputs:
+      expo_account:
+        description: "Il tuo username (o nome account/team) su expo.dev"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Crea/collega il progetto EAS
+        run: npx eas-cli init --non-interactive --force --account "${{ inputs.expo_account }}"
+
+      - name: Configura EAS Update
+        run: npx eas-cli update:configure --non-interactive
+
+      - name: Crea il canale "preview" (se non esiste già)
+        run: npx eas-cli channel:create preview --non-interactive || echo "Canale già esistente, proseguo"
+
+      - name: Salva la configurazione generata (app.json/eas.json) nel repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app.json eas.json 2>/dev/null || git add app.json
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica da salvare"
+          else
+            git commit -m "Configura EAS Update (setup automatico)"
+            git push
+          fi
+
+      - name: Pubblica il primo aggiornamento sul canale "preview"
+        run: npx eas-cli update --branch preview --message "Setup iniziale" --non-interactive
