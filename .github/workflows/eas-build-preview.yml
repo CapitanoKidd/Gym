@@ -1,0 +1,38 @@
+name: Build APK di prova (una tantum per dispositivo/versione nativa)
+
+# Compila un vero file .apk installabile (non passa da Expo Go): utile quando
+# l'aggiornamento OTA dentro Expo Go non parte per problemi di compatibilità/rete.
+# Lancialo a mano da GitHub -> Actions -> "Build APK di prova" -> Run workflow
+# (funziona anche dal browser del telefono). Ci vogliono in genere 10-20 minuti.
+#
+# Al termine, il link per scaricare e installare l'APK si trova su:
+# https://expo.dev/accounts/xrennys-team/projects/la-mia-palestra/builds
+# (l'ultima build in cima alla lista ha un QR code e un pulsante di download diretto).
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: npm
+
+      - name: Compila l'APK sui server EAS (profilo "preview")
+        run: npx eas-cli build --platform android --profile preview --non-interactive --wait
