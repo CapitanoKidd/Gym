@@ -21,6 +21,7 @@ import { usePickerResultStore } from "@/store/usePickerResultStore";
 import { PlanExercise } from "@/types";
 import { colors } from "@/theme";
 import ExerciseThumb from "@/components/ExerciseThumb";
+import WeightInput from "@/components/WeightInput";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "PlanEditor">;
 
@@ -213,8 +214,8 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
 
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>Peso (kg)</Text>
-              <TextInput
-                style={styles.repsInput}
+              <WeightInput
+                compact
                 value={item.weight != null ? String(item.weight) : ""}
                 onChangeText={(v) => {
                   const num = v.replace(",", ".");
@@ -222,9 +223,6 @@ export default function PlanEditorScreen({ route, navigation }: Props) {
                   patchRow(item.id, { weight: parsed != null && !isNaN(parsed) ? parsed : undefined });
                 }}
                 onFocus={() => scrollFieldIntoView(index)}
-                keyboardType="decimal-pad"
-                placeholder="–"
-                placeholderTextColor={colors.textMuted}
               />
             </View>
           </View>

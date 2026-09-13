@@ -3,8 +3,9 @@ import { useAudioPlayer } from "expo-audio";
 const REST_END_SOUND = require("../../assets/sounds/rest-end.wav");
 
 /**
- * Suono breve (due beep) da riprodurre quando finisce il riposo tra un esercizio e
- * l'altro, oltre alla vibrazione — più facile da notare se il telefono non è in mano.
+ * Suono breve tipo "ding-dong" da riprodurre quando finisce il riposo tra una serie e
+ * l'altra, oltre alla vibrazione — un segnale di "via libera" riconoscibile, non un
+ * semplice beep, facile da notare anche se il telefono non è in mano.
  */
 export function useRestEndSound() {
   const player = useAudioPlayer(REST_END_SOUND);

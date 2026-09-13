@@ -31,6 +31,7 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { HistoryExerciseLog, PlanExercise } from "@/types";
 import ExerciseThumb from "@/components/ExerciseThumb";
+import WeightInput from "@/components/WeightInput";
 import { useRestEndSound } from "@/utils/sound";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "WorkoutSession">;
@@ -274,8 +275,8 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
           Esercizio {overallIndex >= 0 ? overallIndex + 1 : "-"} / {overallTotal}
         </Text>
         {overallIndex > 0 && (
-          <Pressable onPress={() => setHistoryModalVisible(true)} style={styles.historyLink}>
-            <Text style={styles.historyLinkText}>📋 Esercizi svolti finora</Text>
+          <Pressable onPress={() => setHistoryModalVisible(true)} style={styles.historyBtn}>
+            <Text style={styles.historyBtnText}>📋 Rivedi/modifica esercizi svolti</Text>
           </Pressable>
         )}
       </View>
@@ -332,8 +333,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
                     {isDone ? "✅" : "▶️"} Serie {round + 1}
                   </Text>
                   <View style={styles.weightFieldWrap}>
-                    <TextInput
-                      style={[styles.weightInput, isCurrent && styles.weightInputCurrent]}
+                    <WeightInput
                       value={isCurrent ? weightInput : setLog?.weight != null ? String(setLog.weight) : ""}
                       onChangeText={(v) => {
                         if (isCurrent) {
@@ -342,9 +342,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
                           setSetWeight(currentMember.id, round, parseWeightInput(v));
                         }
                       }}
-                      keyboardType="decimal-pad"
-                      placeholder="peso"
-                      placeholderTextColor={colors.textMuted}
+                      highlighted={isCurrent}
                     />
                     <Text style={styles.weightUnit}>kg</Text>
                   </View>
@@ -437,13 +435,10 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
                       {(log?.setLogs ?? []).map((s, round) => (
                         <View key={round} style={styles.historyChipWrap}>
                           <Text style={styles.historyChipLabel}>S{round + 1}</Text>
-                          <TextInput
-                            style={styles.historyChipInput}
+                          <WeightInput
                             value={s.weight != null ? String(s.weight) : ""}
                             onChangeText={(v) => setSetWeight(pe.id, round, parseWeightInput(v))}
-                            keyboardType="decimal-pad"
-                            placeholder="–"
-                            placeholderTextColor={colors.textMuted}
+                            compact
                           />
                         </View>
                       ))}
@@ -469,8 +464,16 @@ const styles = StyleSheet.create({
   header: { alignItems: "center", marginBottom: 6 },
   chrono: { color: colors.text, fontSize: 42, fontWeight: "700", fontVariant: ["tabular-nums"] },
   progress: { color: colors.textMuted, marginTop: 4 },
-  historyLink: { marginTop: 8 },
-  historyLinkText: { color: colors.primary, fontWeight: "600", fontSize: 13 },
+  historyBtn: {
+    marginTop: 10,
+    backgroundColor: colors.cardAlt,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  historyBtnText: { color: colors.primary, fontWeight: "700", fontSize: 13 },
   body: { flex: 1 },
   bodyContent: { alignItems: "center", paddingHorizontal: 20, paddingBottom: 20 },
   image: { width: 140, height: 140, borderRadius: 18, marginTop: 6, marginBottom: 12 },
