@@ -67,6 +67,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const endWorkout = useSessionStore((s) => s.endWorkout);
   const completeCurrentSet = useSessionStore((s) => s.completeCurrentSet);
   const skipRest = useSessionStore((s) => s.skipRest);
+  const adjustRest = useSessionStore((s) => s.adjustRest);
   const setSetWeight = useSessionStore((s) => s.setSetWeight);
   const setNote = useSessionStore((s) => s.setNote);
   const touchSession = useSessionStore((s) => s.touchSession);
@@ -426,6 +427,14 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
         <View style={styles.body}>
           <Text style={styles.restTitle}>Riposo</Text>
           <Text style={styles.restCountdown}>{formatDuration(restRemaining)}</Text>
+          <View style={styles.restAdjustRow}>
+            <Pressable style={styles.restAdjustBtn} onPress={() => adjustRest(-30)}>
+              <Text style={styles.restAdjustBtnText}>−30s</Text>
+            </Pressable>
+            <Pressable style={styles.restAdjustBtn} onPress={() => adjustRest(30)}>
+              <Text style={styles.restAdjustBtnText}>+30s</Text>
+            </Pressable>
+          </View>
           {nextExerciseData && <Text style={styles.nextUp}>Prossimo: {nextExerciseData.name}</Text>}
         </View>
       )}
@@ -564,6 +573,16 @@ const styles = StyleSheet.create({
   restTitle: { color: colors.textMuted, fontSize: 20, fontWeight: "600", textAlign: "center", marginTop: 60 },
   restCountdown: { color: colors.warning, fontSize: 64, fontWeight: "800", marginTop: 12, fontVariant: ["tabular-nums"], textAlign: "center" },
   nextUp: { color: colors.text, fontSize: 16, marginTop: 20, textAlign: "center" },
+  restAdjustRow: { flexDirection: "row", gap: 14, marginTop: 22, justifyContent: "center" },
+  restAdjustBtn: {
+    backgroundColor: colors.cardAlt,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  restAdjustBtnText: { color: colors.text, fontWeight: "700", fontSize: 15 },
   controls: { gap: 12, paddingHorizontal: 20, paddingBottom: 10, paddingTop: 10 },
   primaryBtn: { backgroundColor: colors.success, borderRadius: 14, paddingVertical: 16, alignItems: "center" },
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 17 },

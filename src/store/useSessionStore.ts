@@ -33,6 +33,9 @@ interface SessionState {
   completeCurrentSet: (plan: WorkoutPlan, weight: number | undefined) => boolean;
   /** Termina subito il riposo corrente e passa alla fase successiva. */
   skipRest: () => void;
+  /** Allunga/accorcia il riposo in corso di questo tanti secondi (es. -30/+30), senza mai
+   * scendere sotto zero. */
+  adjustRest: (deltaSeconds: number) => void;
   /** Segna "adesso" come ultimo istante in cui l'app era aperta su questa sessione
    * (va chiamata quando l'app va in background e quando torna in primo piano, per far
    * scadere correttamente le sessioni abbandonate). */
@@ -106,6 +109,13 @@ export const useSessionStore = create<SessionState>()(
 
       skipRest: () =>
         set((s) => (s.active ? { active: { ...s.active, phase: "exercise", phaseStartedAt: Date.now() } } : s)),
+
+      adjustRest: (deltaSeconds) =>
+        set((s) =>
+          s.active
+            ? { active: { ...s.active, restTargetSeconds: Math.max(0, s.active.restTargetSeconds + deltaSeconds) } }
+            : s
+        ),
 
       touchSession: () =>
         set((s) => (s.active ? { active: { ...s.active, lastSeenAt: Date.now() } } : s)),
