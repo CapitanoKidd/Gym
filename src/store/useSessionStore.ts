@@ -4,6 +4,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ActiveWorkout, SessionLogEntry, WorkoutPlan } from "@/types";
 import { buildExerciseGroups, computeNextPointer } from "@/utils/supersets";
 
+/** Se l'app non torna in primo piano su una sessione attiva per più di questo tempo, la
+ * sessione si considera abbandonata e va scartata invece che ripresa. */
+export const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
+
+export function isSessionExpired(active: ActiveWorkout | null): boolean {
+  if (!active) return false;
+  return Date.now() - active.lastSeenAt > SESSION_TIMEOUT_MS;
+}
+
 function makeInitialLogs(plan: WorkoutPlan): Record<string, SessionLogEntry> {
   const logs: Record<string, SessionLogEntry> = {};
   for (const pe of plan.exercises) {
@@ -24,6 +33,10 @@ interface SessionState {
   completeCurrentSet: (plan: WorkoutPlan, weight: number | undefined) => boolean;
   /** Termina subito il riposo corrente e passa alla fase successiva. */
   skipRest: () => void;
+  /** Segna "adesso" come ultimo istante in cui l'app era aperta su questa sessione
+   * (va chiamata quando l'app va in background e quando torna in primo piano, per far
+   * scadere correttamente le sessioni abbandonate). */
+  touchSession: () => void;
   /** Modifica il peso di una serie già registrata (o non ancora eseguita) senza cambiare fase. */
   setSetWeight: (planExerciseId: string, round: number, weight: number | undefined) => void;
   setNote: (planExerciseId: string, note: string) => void;
@@ -46,6 +59,7 @@ export const useSessionStore = create<SessionState>()(
             round: 0,
             restTargetSeconds: 0,
             logs: makeInitialLogs(plan),
+            lastSeenAt: Date.now(),
           },
         }),
 
@@ -92,6 +106,9 @@ export const useSessionStore = create<SessionState>()(
 
       skipRest: () =>
         set((s) => (s.active ? { active: { ...s.active, phase: "exercise", phaseStartedAt: Date.now() } } : s)),
+
+      touchSession: () =>
+        set((s) => (s.active ? { active: { ...s.active, lastSeenAt: Date.now() } } : s)),
 
       setSetWeight: (planExerciseId, round, weight) =>
         set((s) => {

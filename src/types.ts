@@ -71,6 +71,9 @@ export interface ActiveWorkout {
   restTargetSeconds: number;
   /** Log delle serie svolte in questa sessione, per id della riga PlanExercise. */
   logs: Record<string, SessionLogEntry>;
+  /** Ultimo istante in cui l'app era effettivamente aperta su questa sessione: se si
+   * riapre l'app dopo troppo tempo da qui, l'allenamento si considera abbandonato. */
+  lastSeenAt: number;
 }
 
 export interface HistoryExerciseLog {

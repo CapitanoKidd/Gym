@@ -14,6 +14,7 @@ import {
   TextInput,
   Vibration,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useKeepAwake } from "expo-keep-awake";
 import { setAudioModeAsync } from "expo-audio";
@@ -21,7 +22,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useExerciseStore } from "@/store/useExerciseStore";
-import { useSessionStore } from "@/store/useSessionStore";
+import { isSessionExpired, useSessionStore } from "@/store/useSessionStore";
 import { useHistoryStore } from "@/store/useHistoryStore";
 import { colors } from "@/theme";
 import { formatDuration } from "@/utils/time";
@@ -68,17 +69,26 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const skipRest = useSessionStore((s) => s.skipRest);
   const setSetWeight = useSessionStore((s) => s.setSetWeight);
   const setNote = useSessionStore((s) => s.setNote);
+  const touchSession = useSessionStore((s) => s.touchSession);
 
   const [now, setNow] = useState(Date.now());
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [weightInput, setWeightInput] = useState("");
-  const [historyModalVisible, setHistoryModalVisible] = useState(false);
 
-  // Avvia la sessione se non è già attiva per questa scheda
+  // Avvia la sessione se non è già attiva per questa scheda, oppure se lo era ma è
+  // rimasta abbandonata troppo a lungo (app chiusa per più di 15 minuti): in tal caso
+  // si scarta e si riparte da zero invece di riprenderla a metà con il cronometro confuso.
   useEffect(() => {
-    if (plan && (!active || active.planId !== planId)) {
-      startWorkout(plan);
+    if (plan) {
+      if (!active || active.planId !== planId) {
+        startWorkout(plan);
+      } else if (isSessionExpired(active)) {
+        Alert.alert("Allenamento ripreso da zero", "Erano passati più di 15 minuti da quando avevi chiuso l'app: la sessione precedente non è stata salvata.");
+        startWorkout(plan);
+      } else {
+        touchSession();
+      }
     }
     navigation.setOptions({ gestureEnabled: false, headerBackVisible: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,6 +109,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
     const sub = AppState.addEventListener("change", (next: AppStateStatus) => {
       if (appState.current === "active" && next.match(/inactive|background/)) {
         if (active) {
+          touchSession(); // segna "ultima volta vista" adesso, per far scadere correttamente dopo 15 min
           if (active.phase === "rest") {
             const remaining = active.restTargetSeconds - (Date.now() - active.phaseStartedAt) / 1000;
             scheduleRestEndReminder(remaining);
@@ -109,11 +120,18 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
         }
       } else if (next === "active") {
         cancelWorkoutReminder();
+        // L'app era rimasta in background (non chiusa del tutto) più di 15 minuti: se
+        // succede senza smontare/rimontare questa schermata, va comunque intercettato qui.
+        if (active && plan && isSessionExpired(active)) {
+          startWorkout(plan);
+        } else if (active) {
+          touchSession();
+        }
       }
       appState.current = next;
     });
     return () => sub.remove();
-  }, [active]);
+  }, [active, plan]);
 
   const ready = !!plan && !!active && active.planId === planId;
 
@@ -162,6 +180,24 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   // Progresso complessivo mostrato in alto: quale esercizio della scheda (in ordine) è in corso.
   const overallIndex = plan && currentMember ? plan.exercises.findIndex((e) => e.id === currentMember.id) : -1;
   const overallTotal = plan?.exercises.length ?? 0;
+
+  // Esercizi già svolti + quello attuale, come pagine da scorrere orizzontalmente: la
+  // pagina attuale è sempre l'ultima. Scorrere indietro è solo una consultazione: non
+  // cambia l'esercizio "in corso", che resta quello dei pulsanti/timer in basso.
+  const { width: windowWidth } = useWindowDimensions();
+  const pagerRef = useRef<ScrollView>(null);
+  const reviewPages = plan && overallIndex >= 0 ? plan.exercises.slice(0, overallIndex + 1) : [];
+  const currentPageIndex = reviewPages.length - 1;
+
+  // Ogni volta che l'esercizio "attuale" cambia (nuova serie di un'altra esercizio della
+  // superserie, o esercizio successivo), la vista torna a mostrarlo automaticamente.
+  useEffect(() => {
+    if (currentPageIndex < 0) return;
+    requestAnimationFrame(() => {
+      pagerRef.current?.scrollTo({ x: currentPageIndex * windowWidth, animated: false });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPageIndex, windowWidth]);
 
   const finishWorkout = (skipConfirm = false) => {
     const doFinish = () => {
@@ -274,88 +310,115 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
         <Text style={styles.progress}>
           Esercizio {overallIndex >= 0 ? overallIndex + 1 : "-"} / {overallTotal}
         </Text>
-        {overallIndex > 0 && (
-          <Pressable onPress={() => setHistoryModalVisible(true)} style={styles.historyBtn}>
-            <Text style={styles.historyBtnText}>📋 Rivedi/modifica esercizi svolti</Text>
-          </Pressable>
+        {overallIndex > 0 && currentActive.phase === "exercise" && (
+          <Text style={styles.swipeHint}>◀ Scorri per rivedere gli esercizi precedenti</Text>
         )}
       </View>
 
       {currentActive.phase === "exercise" && currentMember && (
-        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
-          {currentExercise ? (
-            <>
-              <ExerciseThumb exercise={currentExercise} size={140} borderRadius={18} style={styles.image} />
-              <Text style={styles.exerciseName}>{currentExercise.name}</Text>
-            </>
-          ) : (
-            <Text style={styles.missingExerciseText}>⚠️ Esercizio eliminato dalla libreria</Text>
-          )}
+        <ScrollView
+          ref={pagerRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.body}
+          contentOffset={{ x: currentPageIndex * windowWidth, y: 0 }}
+        >
+          {reviewPages.map((pe, pageIndex) => {
+            const isCurrentPage = pageIndex === currentPageIndex;
+            const pageExercise = getExerciseById(pe.exerciseId);
+            const pageLog = active?.logs[pe.id];
 
-          {isSuperset && (
-            <View style={styles.supersetBadge}>
-              <Text style={styles.supersetBadgeText}>🔗 Superserie con: {partnerNames.join(", ")}</Text>
-            </View>
-          )}
+            return (
+              <ScrollView
+                key={pe.id}
+                style={{ width: windowWidth }}
+                contentContainerStyle={styles.bodyContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                {!isCurrentPage && <Text style={styles.pastPageHint}>Esercizio già svolto — sola consultazione, peso modificabile</Text>}
 
-          <Text style={styles.setsReps}>
-            {currentMember.sets} serie × {currentMember.reps} ripetizioni
-          </Text>
+                {pageExercise ? (
+                  <>
+                    <ExerciseThumb exercise={pageExercise} size={140} borderRadius={18} style={styles.image} />
+                    <Text style={styles.exerciseName}>{pageExercise.name}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.missingExerciseText}>⚠️ Esercizio eliminato dalla libreria</Text>
+                )}
 
-          {currentExercise && (
-            <Pressable onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: currentExercise.id })}>
-              <Text style={styles.infoLink}>Come si esegue →</Text>
-            </Pressable>
-          )}
-
-          {/* Le serie: quelle già fatte restano visibili col peso (modificabile), quella
-              corrente ha il campo peso in evidenza + il tasto per completarla, quelle
-              future sono solo un'anteprima. */}
-          <View style={styles.setsCard}>
-            {Array.from({ length: currentMember.sets }).map((_, round) => {
-              const setLog = currentLog?.setLogs[round];
-              const isDone = round < currentActive.round || (round === currentActive.round && setLog?.completed);
-              const isCurrent = round === currentActive.round && !setLog?.completed;
-              const isUpcoming = round > currentActive.round;
-
-              if (isUpcoming) {
-                return (
-                  <View key={round} style={[styles.setRow, styles.setRowUpcoming]}>
-                    <Text style={styles.setRowLabelMuted}>Serie {round + 1}</Text>
-                    <Text style={styles.setRowMuted}>{currentMember.reps} rip.</Text>
+                {isCurrentPage && isSuperset && (
+                  <View style={styles.supersetBadge}>
+                    <Text style={styles.supersetBadgeText}>🔗 Superserie con: {partnerNames.join(", ")}</Text>
                   </View>
-                );
-              }
+                )}
 
-              return (
-                <View key={round} style={[styles.setRow, isCurrent && styles.setRowCurrent]}>
-                  <Text style={[styles.setRowLabel, isCurrent && styles.setRowLabelCurrent]}>
-                    {isDone ? "✅" : "▶️"} Serie {round + 1}
-                  </Text>
-                  <View style={styles.weightFieldWrap}>
-                    <WeightInput
-                      value={isCurrent ? weightInput : setLog?.weight != null ? String(setLog.weight) : ""}
-                      onChangeText={(v) => {
-                        if (isCurrent) {
-                          setWeightInput(v);
-                        } else {
-                          setSetWeight(currentMember.id, round, parseWeightInput(v));
-                        }
-                      }}
-                      highlighted={isCurrent}
-                    />
-                    <Text style={styles.weightUnit}>kg</Text>
-                  </View>
+                <Text style={styles.setsReps}>
+                  {pe.sets} serie × {pe.reps} ripetizioni
+                </Text>
+
+                {pageExercise && (
+                  <Pressable onPress={() => navigation.navigate("ExerciseDetail", { exerciseId: pageExercise.id })}>
+                    <Text style={styles.infoLink}>Come si esegue →</Text>
+                  </Pressable>
+                )}
+
+                {/* Le serie: quelle già fatte restano visibili col peso (modificabile), quella
+                    corrente (solo nella pagina attuale) ha il campo peso in evidenza + il
+                    tasto per completarla, quelle future sono solo un'anteprima. */}
+                <View style={styles.setsCard}>
+                  {Array.from({ length: pe.sets }).map((_, round) => {
+                    const setLog = pageLog?.setLogs[round];
+                    const isDone = !isCurrentPage || round < currentActive.round || (round === currentActive.round && setLog?.completed);
+                    const isCurrent = isCurrentPage && round === currentActive.round && !setLog?.completed;
+                    const isUpcoming = isCurrentPage && round > currentActive.round;
+
+                    if (isUpcoming) {
+                      return (
+                        <View key={round} style={[styles.setRow, styles.setRowUpcoming]}>
+                          <Text style={styles.setRowLabelMuted}>Serie {round + 1}</Text>
+                          <Text style={styles.setRowMuted}>{pe.reps} rip.</Text>
+                        </View>
+                      );
+                    }
+
+                    return (
+                      <View key={round} style={[styles.setRow, isCurrent && styles.setRowCurrent]}>
+                        <Text style={[styles.setRowLabel, isCurrent && styles.setRowLabelCurrent]}>
+                          {isDone ? "✅" : "▶️"} Serie {round + 1}
+                        </Text>
+                        <View style={styles.weightFieldWrap}>
+                          <WeightInput
+                            value={isCurrent ? weightInput : setLog?.weight != null ? String(setLog.weight) : ""}
+                            onChangeText={(v) => {
+                              if (isCurrent) {
+                                setWeightInput(v);
+                              } else {
+                                setSetWeight(pe.id, round, parseWeightInput(v));
+                              }
+                            }}
+                            highlighted={isCurrent}
+                          />
+                          <Text style={styles.weightUnit}>kg</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
                 </View>
-              );
-            })}
-          </View>
 
-          {isWeightFromHistory && <Text style={styles.suggestedHint}>💡 Ultima volta: {suggestedWeight} kg</Text>}
+                {isCurrentPage && isWeightFromHistory && (
+                  <Text style={styles.suggestedHint}>💡 Ultima volta: {suggestedWeight} kg</Text>
+                )}
 
-          <Pressable onPress={openNoteModal} style={styles.noteBtn}>
-            <Text style={styles.noteBtnText}>{currentLog?.note ? "📝 Nota salvata" : "📝 Nota (opzionale)"}</Text>
-          </Pressable>
+                {isCurrentPage && (
+                  <Pressable onPress={openNoteModal} style={styles.noteBtn}>
+                    <Text style={styles.noteBtnText}>{currentLog?.note ? "📝 Nota salvata" : "📝 Nota (opzionale)"}</Text>
+                  </Pressable>
+                )}
+                {!isCurrentPage && !!pageLog?.note && <Text style={styles.historyNote}>📝 {pageLog.note}</Text>}
+              </ScrollView>
+            );
+          })}
         </ScrollView>
       )}
 
@@ -414,46 +477,6 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
-      <Modal
-        visible={historyModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setHistoryModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, styles.historyModalCard]}>
-            <Text style={styles.modalTitle}>Esercizi svolti finora</Text>
-            <ScrollView contentContainerStyle={{ paddingBottom: 4 }}>
-              {plan!.exercises.slice(0, overallIndex).map((pe) => {
-                const ex = getExerciseById(pe.exerciseId);
-                const log = active?.logs[pe.id];
-                return (
-                  <View key={pe.id} style={styles.historyExerciseRow}>
-                    <Text style={styles.historyExerciseName}>{ex?.name ?? "Esercizio eliminato"}</Text>
-                    <View style={styles.setWeightsRow}>
-                      {(log?.setLogs ?? []).map((s, round) => (
-                        <View key={round} style={styles.historyChipWrap}>
-                          <Text style={styles.historyChipLabel}>S{round + 1}</Text>
-                          <WeightInput
-                            value={s.weight != null ? String(s.weight) : ""}
-                            onChangeText={(v) => setSetWeight(pe.id, round, parseWeightInput(v))}
-                            compact
-                          />
-                        </View>
-                      ))}
-                    </View>
-                    {!!log?.note && <Text style={styles.historyNote}>📝 {log.note}</Text>}
-                  </View>
-                );
-              })}
-            </ScrollView>
-            <Pressable style={styles.modalConfirm} onPress={() => setHistoryModalVisible(false)}>
-              <Text style={styles.modalConfirmText}>Chiudi</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -464,17 +487,15 @@ const styles = StyleSheet.create({
   header: { alignItems: "center", marginBottom: 6 },
   chrono: { color: colors.text, fontSize: 42, fontWeight: "700", fontVariant: ["tabular-nums"] },
   progress: { color: colors.textMuted, marginTop: 4 },
-  historyBtn: {
-    marginTop: 10,
-    backgroundColor: colors.cardAlt,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  historyBtnText: { color: colors.primary, fontWeight: "700", fontSize: 13 },
+  swipeHint: { color: colors.primary, fontSize: 12, fontWeight: "600", marginTop: 8 },
   body: { flex: 1 },
+  pastPageHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 8,
+    textAlign: "center",
+  },
   bodyContent: { alignItems: "center", paddingHorizontal: 20, paddingBottom: 20 },
   image: { width: 140, height: 140, borderRadius: 18, marginTop: 6, marginBottom: 12 },
   exerciseName: { color: colors.text, fontSize: 22, fontWeight: "700", textAlign: "center" },
@@ -550,25 +571,7 @@ const styles = StyleSheet.create({
   stopBtnText: { color: colors.danger, fontWeight: "700" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 24 },
   modalCard: { backgroundColor: colors.card, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
-  historyModalCard: { maxHeight: "80%" },
-  historyExerciseRow: { marginBottom: 16 },
-  historyExerciseName: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 6 },
-  setWeightsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  historyChipWrap: { alignItems: "center" },
-  historyChipLabel: { color: colors.textMuted, fontSize: 10, marginBottom: 2 },
-  historyChipInput: {
-    backgroundColor: colors.cardAlt,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
-    fontSize: 13,
-    minWidth: 52,
-    textAlign: "center",
-  },
-  historyNote: { color: colors.textMuted, fontSize: 12, marginTop: 6, fontStyle: "italic" },
+  historyNote: { color: colors.textMuted, fontSize: 12, marginTop: 6, fontStyle: "italic", textAlign: "center" },
   modalTitle: { color: colors.text, fontSize: 17, fontWeight: "700", marginBottom: 14 },
   modalLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 6, marginTop: 10 },
   modalInput: {
