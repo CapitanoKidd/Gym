@@ -44,13 +44,20 @@ function getNotifications(): NotificationsModule | null {
     });
     if (Platform.OS === "android") {
       // Su Android 8+ una notifica senza canale (o con importanza bassa) può essere
-      // ritardata o del tutto soppressa dal sistema/dal produttore del telefono: questo è
-      // il motivo più comune per cui il promemoria "allenamento in corso" a volte non
-      // arrivava. Un canale con importanza HIGH garantisce la consegna come heads-up.
+      // ritardata o del tutto soppressa dal sistema/dal produttore del telefono. Inoltre,
+      // il volume "suoneria/notifiche" viene silenziato dalla modalità vibrazione/silenzioso
+      // del telefono, mentre il volume "sveglie" no: per questo il canale usa
+      // audioAttributes.usage ALARM (lo stesso delle sveglie e dei timer di sistema) e
+      // bypassDnd, così il suono di fine riposo si sente comunque, come richiesto.
       cachedModule.setNotificationChannelAsync(WORKOUT_REMINDER_CHANNEL, {
         name: "Allenamento in corso",
         importance: cachedModule.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
+        bypassDnd: true,
+        audioAttributes: {
+          usage: cachedModule.AndroidAudioUsage.ALARM,
+          contentType: cachedModule.AndroidAudioContentType.SONIFICATION,
+        },
       }).catch(() => {});
     }
   }
@@ -73,7 +80,11 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 
 const WORKOUT_REMINDER_ID = "workout-in-progress-reminder";
 const REST_END_REMINDER_ID = "workout-rest-end-reminder";
-const WORKOUT_REMINDER_CHANNEL = "workout-reminders";
+// "v2": Android blocca la modifica di importanza/suono/vibrazione di un canale già
+// creato (l'utente potrebbe già avere il canale "workout-reminders" dalla versione
+// precedente) — un nuovo id costringe il sistema a creare un canale nuovo con le
+// impostazioni "da sveglia" aggiornate, invece di ignorarle silenziosamente.
+const WORKOUT_REMINDER_CHANNEL = "workout-reminders-v2";
 
 /**
  * Programma una notifica locale che ricorda che l'allenamento è ancora in corso.

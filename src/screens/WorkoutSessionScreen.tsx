@@ -50,10 +50,14 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   useKeepAwake();
 
   const playRestEndSound = useRestEndSound();
-  // Il beep di fine riposo è un allarme funzionale (serve a farsi notare), non un suono
-  // decorativo: deve sentirsi anche se il telefono è in modalità silenziosa/vibrazione.
+  // Il ding-dong di fine riposo è un allarme funzionale (serve a farsi notare), non un
+  // suono decorativo: deve sentirsi anche se il telefono è in modalità silenziosa/vibrazione.
+  // "doNotMix" fa richiedere il focus audio in modo esclusivo invece del default
+  // "mixWithOthers" (che su Android non richiede affatto il focus audio): senza focus
+  // il suono può restare silenzioso o non essere instradato correttamente proprio nei
+  // casi di suoneria impostata su vibrazione, che è esattamente il problema segnalato.
   useEffect(() => {
-    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+    setAudioModeAsync({ playsInSilentMode: true, interruptionMode: "doNotMix" }).catch(() => {});
   }, []);
 
   const { planId } = route.params;
