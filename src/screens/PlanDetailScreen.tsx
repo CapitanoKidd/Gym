@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import { colors } from "@/theme";
 import ExerciseThumb from "@/components/ExerciseThumb";
@@ -30,6 +31,11 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
   }, [navigation, plan?.name, planId]);
 
   const groups = useMemo(() => (plan ? buildExerciseGroups(plan.exercises) : []), [plan]);
+  const activeSession = useSessionStore((s) => s.active);
+  const otherActivePlanName = usePlanStore((s) =>
+    activeSession && activeSession.planId !== planId ? s.getById(activeSession.planId)?.name : undefined
+  );
+  const isThisPlanActive = activeSession?.planId === planId;
 
   if (!plan) {
     return (
@@ -51,6 +57,29 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
         },
       },
     ]);
+  };
+
+  const handleStartWorkout = () => {
+    if (activeSession && activeSession.planId !== plan.id) {
+      Alert.alert(
+        "Allenamento in corso su un'altra scheda",
+        `Hai già un allenamento in corso su "${otherActivePlanName ?? "un'altra scheda"}". Iniziandone uno qui, quello in corso andrà perso.`,
+        [
+          { text: "Annulla", style: "cancel" },
+          {
+            text: "Riprendi quello in corso",
+            onPress: () => navigation.navigate("WorkoutSession", { planId: activeSession.planId }),
+          },
+          {
+            text: "Inizia questo (perdo l'altro)",
+            style: "destructive",
+            onPress: () => navigation.navigate("WorkoutSession", { planId: plan.id }),
+          },
+        ]
+      );
+      return;
+    }
+    navigation.navigate("WorkoutSession", { planId: plan.id });
   };
 
   const renderExerciseContent = (item: PlanExercise, index: number) => {
@@ -126,9 +155,9 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
         <Pressable
           style={[styles.startBtn, plan.exercises.length === 0 && styles.startBtnDisabled]}
           disabled={plan.exercises.length === 0}
-          onPress={() => navigation.navigate("WorkoutSession", { planId: plan.id })}
+          onPress={handleStartWorkout}
         >
-          <Text style={styles.startBtnText}>▶  Inizia allenamento</Text>
+          <Text style={styles.startBtnText}>{isThisPlanActive ? "▶  Riprendi allenamento" : "▶  Inizia allenamento"}</Text>
         </Pressable>
       </View>
     </View>

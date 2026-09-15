@@ -3,15 +3,33 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { colors } from "@/theme";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "PlansList">;
 
 export default function PlansScreen({ navigation }: Props) {
   const plans = usePlanStore((s) => s.plans);
+  const activeSession = useSessionStore((s) => s.active);
+  // Se si esce dalla schermata di allenamento (es. cambiando scheda tramite il tab, che
+  // di default riporta qui alla radice dello stack) la sessione resta comunque salvata:
+  // questo banner è il modo per rientrarci senza doverla ricominciare.
+  const activePlan = activeSession ? plans.find((p) => p.id === activeSession.planId) : undefined;
 
   return (
     <View style={styles.container}>
+      {activePlan && (
+        <Pressable
+          style={styles.resumeBanner}
+          onPress={() => navigation.navigate("WorkoutSession", { planId: activePlan.id })}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.resumeBannerTitle}>💪 Allenamento in corso</Text>
+            <Text style={styles.resumeBannerSubtitle}>{activePlan.name}</Text>
+          </View>
+          <Text style={styles.resumeBannerAction}>Riprendi →</Text>
+        </Pressable>
+      )}
       <FlatList
         data={[...plans].sort((a, b) => b.createdAt - a.createdAt)}
         keyExtractor={(item) => item.id}
@@ -38,6 +56,20 @@ export default function PlansScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 60, lineHeight: 22 },
+  resumeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(52, 199, 89, 0.12)",
+    borderWidth: 1,
+    borderColor: colors.success,
+    borderRadius: 14,
+    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+  resumeBannerTitle: { color: colors.success, fontWeight: "700", fontSize: 15 },
+  resumeBannerSubtitle: { color: colors.text, fontSize: 13, marginTop: 2 },
+  resumeBannerAction: { color: colors.success, fontWeight: "700", fontSize: 13 },
   card: {
     backgroundColor: colors.card,
     borderRadius: 14,
