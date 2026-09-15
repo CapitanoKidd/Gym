@@ -1,4 +1,19 @@
-import { PlanExercise } from "@/types";
+import { PlanExercise, SessionLogEntry } from "@/types";
+
+/** Numero di serie "effettivo" per questo esercizio in questa sessione: quello previsto
+ * dalla scheda più/meno le serie aggiunte/tolte al volo durante l'allenamento (mai sotto 1). */
+export function effectiveSets(pe: PlanExercise, log?: SessionLogEntry): number {
+  return Math.max(1, pe.sets + (log?.extraSets ?? 0));
+}
+
+/** Applica effectiveSets a ogni esercizio della scheda, per usare i contatori "di sessione"
+ * (mai la scheda salvata) in tutta la logica di avanzamento/visualizzazione dell'allenamento. */
+export function applyEffectiveSets(
+  exercises: PlanExercise[],
+  logs: Record<string, SessionLogEntry>
+): PlanExercise[] {
+  return exercises.map((pe) => ({ ...pe, sets: effectiveSets(pe, logs[pe.id]) }));
+}
 
 /**
  * Raggruppa gli esercizi consecutivi di una scheda in base al collegamento

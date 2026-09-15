@@ -27,7 +27,7 @@ import { useHistoryStore } from "@/store/useHistoryStore";
 import { colors } from "@/theme";
 import { formatDuration } from "@/utils/time";
 import { cancelWorkoutReminder, scheduleRestEndReminder, scheduleWorkoutReminder } from "@/utils/notifications";
-import { buildExerciseGroups, isLastSetOfMember } from "@/utils/supersets";
+import { applyEffectiveSets, buildExerciseGroups, isLastSetOfMember } from "@/utils/supersets";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { HistoryExerciseLog, PlanExercise } from "@/types";
@@ -42,6 +42,13 @@ function parseWeightInput(text: string): number | undefined {
   if (num === "") return undefined;
   const parsed = parseFloat(num);
   return isNaN(parsed) ? undefined : parsed;
+}
+
+/** Ricava un numero di ripetizioni "di default" da mostrare per una nuova serie, a
+ * partire dal target della scheda (es. "10-12" → 10, "AMRAP" → 10 come fallback). */
+function parseDefaultReps(repsTarget: string): number {
+  const match = repsTarget.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 10;
 }
 
 export default function WorkoutSessionScreen({ route, navigation }: Props) {
@@ -73,6 +80,8 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const skipRest = useSessionStore((s) => s.skipRest);
   const adjustRest = useSessionStore((s) => s.adjustRest);
   const setSetWeight = useSessionStore((s) => s.setSetWeight);
+  const setSetReps = useSessionStore((s) => s.setSetReps);
+  const adjustSessionSets = useSessionStore((s) => s.adjustSessionSets);
   const setNote = useSessionStore((s) => s.setNote);
   const touchSession = useSessionStore((s) => s.touchSession);
 
@@ -80,6 +89,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [weightInput, setWeightInput] = useState("");
+  const [repsInput, setRepsInput] = useState(10);
 
   // Avvia la sessione se non è già attiva per questa scheda, oppure se lo era ma è
   // rimasta abbandonata troppo a lungo (app chiusa per più di 15 minuti): in tal caso
@@ -140,7 +150,14 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
 
   const ready = !!plan && !!active && active.planId === planId;
 
-  const groups = useMemo(() => (plan ? buildExerciseGroups(plan.exercises) : []), [plan]);
+  // Le serie previste da ciascun esercizio possono essere aumentate/diminuite al volo
+  // durante la sessione (senza toccare la scheda salvata): tutta la logica di
+  // avanzamento e la UI usano questo numero "effettivo", non quello della scheda.
+  const effectiveExercises = useMemo(
+    () => (plan ? applyEffectiveSets(plan.exercises, active?.logs ?? {}) : []),
+    [plan, active?.logs]
+  );
+  const groups = useMemo(() => buildExerciseGroups(effectiveExercises), [effectiveExercises]);
   const currentGroup = ready ? groups[active!.groupIndex] : undefined;
   const currentMember: PlanExercise | undefined = currentGroup?.[active!.memberIndex];
   const currentExercise = currentMember ? getExerciseById(currentMember.exerciseId) : undefined;
@@ -169,11 +186,12 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
     currentLog?.setLogs.slice(0, active.round).every((s) => s.weight == null) &&
     suggestedWeight != null;
 
-  // Precompila il campo peso della serie corrente quando cambia esercizio/round
+  // Precompila i campi peso/ripetizioni della serie corrente quando cambia esercizio/round
   useEffect(() => {
-    if (!ready || active!.phase !== "exercise") return;
-    const existing = currentLog?.setLogs[active!.round]?.weight;
-    setWeightInput(existing != null ? String(existing) : suggestedWeight != null ? String(suggestedWeight) : "");
+    if (!ready || !currentMember || active!.phase !== "exercise") return;
+    const existing = currentLog?.setLogs[active!.round];
+    setWeightInput(existing?.weight != null ? String(existing.weight) : suggestedWeight != null ? String(suggestedWeight) : "");
+    setRepsInput(existing?.reps ?? parseDefaultReps(currentMember.reps));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, active?.phase, active?.groupIndex, active?.memberIndex, active?.round]);
 
@@ -185,13 +203,16 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   // Progresso complessivo mostrato in alto: quale esercizio della scheda (in ordine) è in corso.
   const overallIndex = plan && currentMember ? plan.exercises.findIndex((e) => e.id === currentMember.id) : -1;
   const overallTotal = plan?.exercises.length ?? 0;
+  // Serie previste dalla scheda salvata per l'esercizio corrente (senza le eventuali
+  // aggiunte/rimozioni di sessione), usato come riferimento dai pulsanti +/- serie.
+  const currentMemberBaseSets = plan?.exercises.find((e) => e.id === currentMember?.id)?.sets ?? currentMember?.sets ?? 1;
 
   // Esercizi già svolti + quello attuale, come pagine da scorrere orizzontalmente: la
   // pagina attuale è sempre l'ultima. Scorrere indietro è solo una consultazione: non
   // cambia l'esercizio "in corso", che resta quello dei pulsanti/timer in basso.
   const { width: windowWidth } = useWindowDimensions();
   const pagerRef = useRef<ScrollView>(null);
-  const reviewPages = plan && overallIndex >= 0 ? plan.exercises.slice(0, overallIndex + 1) : [];
+  const reviewPages = overallIndex >= 0 ? effectiveExercises.slice(0, overallIndex + 1) : [];
   const currentPageIndex = reviewPages.length - 1;
 
   // Ogni volta che l'esercizio "attuale" cambia (nuova serie di un'altra esercizio della
@@ -273,7 +294,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const handleCompleteSet = () => {
     if (!plan) return;
     const weight = parseWeightInput(weightInput);
-    const more = completeCurrentSet(plan, weight);
+    const more = completeCurrentSet(plan, weight, repsInput);
     if (!more) {
       finishWorkout(true);
     }
@@ -302,12 +323,6 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   const currentActive = active!;
   const isLastSet = currentGroup && currentMember ? isLastSetOfMember(currentGroup, currentActive.memberIndex, currentActive.round) : true;
 
-  // Prossimo esercizio da mostrare durante il riposo (chi tocca dopo, tra un round e l'altro
-  // o all'inizio del gruppo successivo).
-  const nextGroup = groups[currentActive.groupIndex];
-  const nextMember = nextGroup?.[currentActive.memberIndex];
-  const nextExerciseData = nextMember ? getExerciseById(nextMember.exerciseId) : undefined;
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -320,7 +335,7 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
         )}
       </View>
 
-      {currentActive.phase === "exercise" && currentMember && (
+      {currentMember && (
         <ScrollView
           ref={pagerRef}
           horizontal
@@ -358,6 +373,24 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
                   </View>
                 )}
 
+                {/* Il riposo è integrato qui, sopra la lista delle serie, invece che in una
+                    schermata separata: così si vede sempre quante serie mancano mentre si
+                    aspetta il recupero. */}
+                {isCurrentPage && currentActive.phase === "rest" && (
+                  <View style={styles.restBanner}>
+                    <Text style={styles.restBannerTitle}>Riposo</Text>
+                    <Text style={styles.restBannerCountdown}>{formatDuration(restRemaining)}</Text>
+                    <View style={styles.restAdjustRow}>
+                      <Pressable style={styles.restAdjustBtn} onPress={() => adjustRest(-30)}>
+                        <Text style={styles.restAdjustBtnText}>−30s</Text>
+                      </Pressable>
+                      <Pressable style={styles.restAdjustBtn} onPress={() => adjustRest(30)}>
+                        <Text style={styles.restAdjustBtnText}>+30s</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
+
                 <Text style={styles.setsReps}>
                   {pe.sets} serie × {pe.reps} ripetizioni
                 </Text>
@@ -387,29 +420,64 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
                       );
                     }
 
+                    const repsValue = isCurrent ? repsInput : setLog?.reps ?? parseDefaultReps(pe.reps);
+                    const changeReps = (delta: number) => {
+                      const next = Math.max(0, repsValue + delta);
+                      if (isCurrent) {
+                        setRepsInput(next);
+                      } else {
+                        setSetReps(pe.id, round, next);
+                      }
+                    };
+
                     return (
                       <View key={round} style={[styles.setRow, isCurrent && styles.setRowCurrent]}>
-                        <Text style={[styles.setRowLabel, isCurrent && styles.setRowLabelCurrent]}>
-                          {isDone ? "✅" : "▶️"} Serie {round + 1}
-                        </Text>
-                        <View style={styles.weightFieldWrap}>
-                          <WeightInput
-                            value={isCurrent ? weightInput : setLog?.weight != null ? String(setLog.weight) : ""}
-                            onChangeText={(v) => {
-                              if (isCurrent) {
-                                setWeightInput(v);
-                              } else {
-                                setSetWeight(pe.id, round, parseWeightInput(v));
-                              }
-                            }}
-                            highlighted={isCurrent}
-                          />
-                          <Text style={styles.weightUnit}>kg</Text>
+                        <View style={styles.setRowTop}>
+                          <Text style={[styles.setRowLabel, isCurrent && styles.setRowLabelCurrent]}>
+                            {isDone ? "✅" : "▶️"} Serie {round + 1}
+                          </Text>
+                          <View style={styles.repsStepperRow}>
+                            <Pressable onPress={() => changeReps(-1)} style={styles.miniStepBtn} hitSlop={6}>
+                              <Text style={styles.miniStepBtnText}>–</Text>
+                            </Pressable>
+                            <Text style={styles.repsValue}>{repsValue}</Text>
+                            <Pressable onPress={() => changeReps(1)} style={styles.miniStepBtn} hitSlop={6}>
+                              <Text style={styles.miniStepBtnText}>+</Text>
+                            </Pressable>
+                            <Text style={styles.repsUnit}>rip.</Text>
+                          </View>
+                        </View>
+                        <View style={styles.setRowBottom}>
+                          <View style={styles.weightFieldWrap}>
+                            <WeightInput
+                              value={isCurrent ? weightInput : setLog?.weight != null ? String(setLog.weight) : ""}
+                              onChangeText={(v) => {
+                                if (isCurrent) {
+                                  setWeightInput(v);
+                                } else {
+                                  setSetWeight(pe.id, round, parseWeightInput(v));
+                                }
+                              }}
+                              highlighted={isCurrent}
+                            />
+                            <Text style={styles.weightUnit}>kg</Text>
+                          </View>
                         </View>
                       </View>
                     );
                   })}
                 </View>
+
+                {isCurrentPage && (
+                  <View style={styles.setsAdjustRow}>
+                    <Pressable style={styles.setsAdjustBtn} onPress={() => adjustSessionSets(pe.id, currentMemberBaseSets, -1)}>
+                      <Text style={styles.setsAdjustBtnText}>− Serie</Text>
+                    </Pressable>
+                    <Pressable style={styles.setsAdjustBtn} onPress={() => adjustSessionSets(pe.id, currentMemberBaseSets, 1)}>
+                      <Text style={styles.setsAdjustBtnText}>+ Serie</Text>
+                    </Pressable>
+                  </View>
+                )}
 
                 {isCurrentPage && isWeightFromHistory && (
                   <Text style={styles.suggestedHint}>💡 Ultima volta: {suggestedWeight} kg</Text>
@@ -425,22 +493,6 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
             );
           })}
         </ScrollView>
-      )}
-
-      {currentActive.phase === "rest" && (
-        <View style={styles.body}>
-          <Text style={styles.restTitle}>Riposo</Text>
-          <Text style={styles.restCountdown}>{formatDuration(restRemaining)}</Text>
-          <View style={styles.restAdjustRow}>
-            <Pressable style={styles.restAdjustBtn} onPress={() => adjustRest(-30)}>
-              <Text style={styles.restAdjustBtnText}>−30s</Text>
-            </Pressable>
-            <Pressable style={styles.restAdjustBtn} onPress={() => adjustRest(30)}>
-              <Text style={styles.restAdjustBtnText}>+30s</Text>
-            </Pressable>
-          </View>
-          {nextExerciseData && <Text style={styles.nextUp}>Prossimo: {nextExerciseData.name}</Text>}
-        </View>
       )}
 
       <View style={styles.controls}>
@@ -534,20 +586,44 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   setRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  setRowUpcoming: { opacity: 0.5 },
+  setRowTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  setRowBottom: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", marginTop: 8 },
+  setRowUpcoming: { opacity: 0.5, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   setRowCurrent: { backgroundColor: "rgba(52, 199, 89, 0.08)" },
   setRowLabel: { color: colors.text, fontSize: 15, fontWeight: "600" },
   setRowLabelCurrent: { color: colors.success },
   setRowLabelMuted: { color: colors.textMuted, fontSize: 15, fontWeight: "600" },
   setRowMuted: { color: colors.textMuted, fontSize: 13 },
+  repsStepperRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  miniStepBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.cardAlt,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  miniStepBtnText: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  repsValue: { color: colors.text, fontSize: 15, fontWeight: "700", minWidth: 22, textAlign: "center" },
+  repsUnit: { color: colors.textMuted, fontSize: 12 },
+  setsAdjustRow: { flexDirection: "row", gap: 10, marginTop: 12, width: "100%" },
+  setsAdjustBtn: {
+    flex: 1,
+    backgroundColor: colors.cardAlt,
+    borderRadius: 10,
+    paddingVertical: 9,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  setsAdjustBtnText: { color: colors.text, fontWeight: "700", fontSize: 13 },
   weightFieldWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
   weightInput: {
     backgroundColor: colors.cardAlt,
@@ -574,10 +650,19 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   noteBtnText: { color: colors.text, fontWeight: "600", fontSize: 13 },
-  restTitle: { color: colors.textMuted, fontSize: 20, fontWeight: "600", textAlign: "center", marginTop: 60 },
-  restCountdown: { color: colors.warning, fontSize: 64, fontWeight: "800", marginTop: 12, fontVariant: ["tabular-nums"], textAlign: "center" },
-  nextUp: { color: colors.text, fontSize: 16, marginTop: 20, textAlign: "center" },
-  restAdjustRow: { flexDirection: "row", gap: 14, marginTop: 22, justifyContent: "center" },
+  restBanner: {
+    width: "100%",
+    backgroundColor: "rgba(255, 183, 79, 0.12)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.warning,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 14,
+  },
+  restBannerTitle: { color: colors.textMuted, fontSize: 15, fontWeight: "600" },
+  restBannerCountdown: { color: colors.warning, fontSize: 44, fontWeight: "800", marginTop: 4, fontVariant: ["tabular-nums"] },
+  restAdjustRow: { flexDirection: "row", gap: 14, marginTop: 12, justifyContent: "center" },
   restAdjustBtn: {
     backgroundColor: colors.cardAlt,
     borderRadius: 12,

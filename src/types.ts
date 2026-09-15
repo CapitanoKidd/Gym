@@ -47,6 +47,8 @@ export interface WorkoutPlan {
 /** Stato di una singola serie eseguita durante l'allenamento. */
 export interface SetLogEntry {
   weight?: number;
+  /** Ripetizioni effettivamente eseguite in questa serie, se diverse da quelle previste. */
+  reps?: number;
   completed: boolean;
 }
 
@@ -54,6 +56,9 @@ export interface SessionLogEntry {
   note?: string;
   /** Una entry per ogni serie prevista dell'esercizio (indice = numero serie, 0-based). */
   setLogs: SetLogEntry[];
+  /** Serie aggiunte (positivo) o tolte (negativo) rispetto a quelle previste dalla scheda,
+   * decise al volo durante questa sessione — non modifica la scheda salvata. */
+  extraSets?: number;
 }
 
 export interface ActiveWorkout {
