@@ -3,6 +3,7 @@
     "name": "La Mia Palestra",
     "slug": "la-mia-palestra",
     "version": "1.0.0",
+    "icon": "./assets/icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -25,7 +26,8 @@
     "android": {
       "package": "com.local.lamiapalestra",
       "adaptiveIcon": {
-        "backgroundColor": "#111318"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#191919"
       },
       "permissions": ["NOTIFICATIONS", "SCHEDULE_EXACT_ALARM"]
     },
