@@ -5,7 +5,7 @@ import { ExercisesStackParamList } from "@/navigation/types";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import ExerciseCard from "@/components/ExerciseCard";
 import MuscleGroupFilter from "@/components/MuscleGroupFilter";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import { searchExercises } from "@/utils/search";
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, "ExercisesList">;
@@ -53,29 +53,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 16, paddingTop: 12 },
   search: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadow.sm,
   },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 40 },
   fab: {
     position: "absolute",
     right: 20,
     bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: radius.pill,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    ...shadow.md,
   },
   fabText: { color: "#fff", fontSize: 30, lineHeight: 32, marginTop: -2 },
 });

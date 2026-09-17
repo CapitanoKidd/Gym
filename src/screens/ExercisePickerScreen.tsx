@@ -6,7 +6,7 @@ import { useExerciseStore } from "@/store/useExerciseStore";
 import { usePickerResultStore } from "@/store/usePickerResultStore";
 import ExerciseCard from "@/components/ExerciseCard";
 import MuscleGroupFilter from "@/components/MuscleGroupFilter";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import { searchExercises } from "@/utils/search";
 
 type Props = NativeStackScreenProps<PlansStackParamList, "ExercisePicker">;
@@ -68,19 +68,20 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 16, paddingTop: 12 },
   search: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadow.sm,
   },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 40 },
   addBtn: {
     backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderRadius: radius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
     marginRight: 10,
   },
   addBtnText: { color: "#fff", fontSize: 12, fontWeight: "700" },

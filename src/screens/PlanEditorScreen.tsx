@@ -19,7 +19,7 @@ import { usePlanStore, makeDraftPlanExercise } from "@/store/usePlanStore";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import { usePickerResultStore } from "@/store/usePickerResultStore";
 import { PlanExercise } from "@/types";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import WeightInput from "@/components/WeightInput";
 
@@ -329,24 +329,26 @@ const styles = StyleSheet.create({
   nameSection: { paddingHorizontal: 16, paddingTop: 14 },
   nameInput: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 11,
     color: colors.text,
     fontSize: 17,
     fontWeight: "600",
     borderWidth: 1,
     borderColor: colors.border,
     marginTop: 6,
+    ...shadow.sm,
   },
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 40, lineHeight: 22 },
   row: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: radius.md,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 10,
+    ...shadow.sm,
   },
   rowActive: { opacity: 0.9, borderColor: colors.primary },
   rowSuperset: { borderColor: colors.warning },
@@ -412,7 +414,7 @@ const styles = StyleSheet.create({
   },
   addBtn: {
     backgroundColor: colors.cardAlt,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingVertical: 12,
     alignItems: "center",
     borderWidth: 1,
@@ -423,14 +425,14 @@ const styles = StyleSheet.create({
   cancelBtn: {
     flex: 1,
     backgroundColor: "transparent",
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,
   },
   cancelBtnText: { color: colors.textMuted, fontWeight: "600" },
-  saveBtn: { flex: 2, backgroundColor: colors.success, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  saveBtn: { flex: 2, backgroundColor: colors.success, borderRadius: radius.md, paddingVertical: 14, alignItems: "center", ...shadow.md },
   saveBtnDisabled: { opacity: 0.4 },
   saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

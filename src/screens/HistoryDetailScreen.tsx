@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from "react-nati
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { HistoryStackParamList } from "@/navigation/types";
 import { useHistoryStore } from "@/store/useHistoryStore";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import { formatDuration } from "@/utils/time";
 
 type Props = NativeStackScreenProps<HistoryStackParamList, "HistoryDetail">;
@@ -79,16 +79,17 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.textMuted, fontSize: 14, marginTop: 6, marginBottom: 20, textTransform: "capitalize" },
   exerciseCard: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: radius.md,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadow.sm,
   },
   exerciseName: { color: colors.text, fontSize: 15, fontWeight: "700" },
   exerciseMeta: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
   setWeightsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
-  setWeightChip: { backgroundColor: colors.cardAlt, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  setWeightChip: { backgroundColor: colors.cardAlt, borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 4 },
   setWeightChipText: { color: colors.text, fontSize: 12, fontWeight: "600" },
   noteBox: { marginTop: 8, backgroundColor: colors.cardAlt, borderRadius: 8, padding: 10 },
   noteText: { color: colors.text, fontSize: 13, lineHeight: 19 },

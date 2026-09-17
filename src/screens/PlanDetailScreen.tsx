@@ -5,7 +5,7 @@ import { PlansStackParamList } from "@/navigation/types";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useExerciseStore } from "@/store/useExerciseStore";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import { buildExerciseGroups } from "@/utils/supersets";
 import { PlanExercise } from "@/types";
@@ -169,26 +169,28 @@ const styles = StyleSheet.create({
   empty: { color: colors.textMuted, textAlign: "center", marginTop: 60, lineHeight: 22 },
   row: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: radius.md,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadow.sm,
   },
   rowContent: { flexDirection: "row", alignItems: "center", padding: 10 },
   missingRowContent: { flexDirection: "row", alignItems: "center", padding: 10 },
   rowIndex: { color: colors.textMuted, fontWeight: "700", width: 22, textAlign: "center" },
   missingText: { color: colors.danger, flex: 1, fontSize: 13 },
-  thumb: { width: 56, height: 56, borderRadius: 10, marginRight: 12 },
-  rowTitle: { color: colors.text, fontSize: 15, fontWeight: "600" },
+  thumb: { width: 56, height: 56, borderRadius: radius.sm, marginRight: 12 },
+  rowTitle: { color: colors.text, fontSize: 15, fontWeight: "700" },
   rowMeta: { color: colors.textMuted, fontSize: 13, marginTop: 3 },
   supersetGroup: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: radius.md,
     marginBottom: 10,
     borderWidth: 2,
     borderColor: colors.warning,
     paddingTop: 6,
     paddingBottom: 4,
+    ...shadow.sm,
   },
   supersetGroupLabel: {
     color: colors.warning,
@@ -212,14 +214,14 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   deleteBtn: {
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingVertical: 12,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.danger,
   },
   deleteBtnText: { color: colors.danger, fontWeight: "600" },
-  startBtn: { backgroundColor: colors.success, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  startBtn: { backgroundColor: colors.success, borderRadius: radius.md, paddingVertical: 15, alignItems: "center", ...shadow.md },
   startBtnDisabled: { opacity: 0.4 },
   startBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
 });

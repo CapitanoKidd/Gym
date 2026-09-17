@@ -24,7 +24,7 @@ import { usePlanStore } from "@/store/usePlanStore";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import { isSessionExpired, useSessionStore } from "@/store/useSessionStore";
 import { useHistoryStore } from "@/store/useHistoryStore";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import { formatDuration } from "@/utils/time";
 import { cancelWorkoutReminder, scheduleRestEndReminder, scheduleWorkoutReminder } from "@/utils/notifications";
 import { applyEffectiveSets, buildExerciseGroups, isLastSetOfMember } from "@/utils/supersets";
@@ -580,8 +580,8 @@ const styles = StyleSheet.create({
   exerciseName: { color: colors.text, fontSize: 22, fontWeight: "700", textAlign: "center" },
   supersetBadge: {
     marginTop: 8,
-    backgroundColor: "rgba(245, 166, 35, 0.15)",
-    borderRadius: 10,
+    backgroundColor: colors.warningSoft,
+    borderRadius: radius.sm,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
@@ -593,11 +593,12 @@ const styles = StyleSheet.create({
   setsCard: {
     width: "100%",
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     marginTop: 18,
     overflow: "hidden",
+    ...shadow.sm,
   },
   setRow: {
     paddingHorizontal: 14,
@@ -666,13 +667,14 @@ const styles = StyleSheet.create({
   noteBtnText: { color: colors.text, fontWeight: "600", fontSize: 13 },
   restBanner: {
     width: "100%",
-    backgroundColor: "rgba(255, 183, 79, 0.12)",
-    borderRadius: 16,
+    backgroundColor: colors.warningSoft,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.warning,
     paddingVertical: 16,
     alignItems: "center",
     marginTop: 14,
+    ...shadow.sm,
   },
   restBannerTitle: { color: colors.textMuted, fontSize: 15, fontWeight: "600" },
   restBannerCountdown: { color: colors.warning, fontSize: 44, fontWeight: "800", marginTop: 4, fontVariant: ["tabular-nums"] },
@@ -687,12 +689,12 @@ const styles = StyleSheet.create({
   },
   restAdjustBtnText: { color: colors.text, fontWeight: "700", fontSize: 15 },
   controls: { gap: 12, paddingHorizontal: 20, paddingBottom: 10, paddingTop: 10 },
-  primaryBtn: { backgroundColor: colors.success, borderRadius: 14, paddingVertical: 16, alignItems: "center" },
+  primaryBtn: { backgroundColor: colors.success, borderRadius: radius.md, paddingVertical: 16, alignItems: "center", ...shadow.md },
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 17 },
-  stopBtn: { backgroundColor: "transparent", borderRadius: 14, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: colors.danger },
+  stopBtn: { backgroundColor: "transparent", borderRadius: radius.md, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: colors.danger },
   stopBtnText: { color: colors.danger, fontWeight: "700" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 24 },
-  modalCard: { backgroundColor: colors.card, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
+  modalCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 20, borderWidth: 1, borderColor: colors.border, ...shadow.md },
   historyNote: { color: colors.textMuted, fontSize: 12, marginTop: 6, fontStyle: "italic", textAlign: "center" },
   modalTitle: { color: colors.text, fontSize: 17, fontWeight: "700", marginBottom: 14 },
   modalLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 6, marginTop: 10 },

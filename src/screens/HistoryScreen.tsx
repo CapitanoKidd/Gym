@@ -3,7 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { HistoryStackParamList } from "@/navigation/types";
 import { useHistoryStore } from "@/store/useHistoryStore";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import { formatDuration } from "@/utils/time";
 
 type Props = NativeStackScreenProps<HistoryStackParamList, "HistoryList">;
@@ -64,11 +64,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: radius.md,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadow.sm,
   },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
   cardDate: { color: colors.textMuted, fontSize: 13, marginTop: 4, textTransform: "capitalize" },

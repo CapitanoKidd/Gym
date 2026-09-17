@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { MUSCLE_GROUPS } from "@/store/useExerciseStore";
-import { colors } from "@/theme";
+import { colors, shadow } from "@/theme";
 
 /**
  * Riga di chip per filtrare per gruppo muscolare. Usa una ScrollView semplice invece di
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary, ...shadow.sm },
   chipText: { color: colors.textMuted, fontSize: 13, lineHeight: 16 },
   chipTextSelected: { color: "#fff", fontWeight: "600" },
 });

@@ -13,7 +13,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ExercisesStackParamList } from "@/navigation/types";
 import { useExerciseStore, MUSCLE_GROUPS } from "@/store/useExerciseStore";
 import { MuscleGroup } from "@/types";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, "AddExercise">;
 
@@ -144,9 +144,9 @@ const styles = StyleSheet.create({
   hint: { color: colors.textMuted, fontSize: 12, marginTop: 6, lineHeight: 17 },
   input: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 11,
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
@@ -156,21 +156,22 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 18,
+    borderRadius: radius.pill,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 4,
   },
-  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary, ...shadow.sm },
   chipText: { color: colors.textMuted, fontSize: 13 },
   chipTextSelected: { color: "#fff", fontWeight: "600" },
   saveBtn: {
     backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: radius.md,
+    paddingVertical: 15,
     alignItems: "center",
     marginTop: 28,
+    ...shadow.md,
   },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },

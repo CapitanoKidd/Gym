@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text } from "react-native";
 import { ExercisesStackParamList, HistoryStackParamList, PlansStackParamList, RootTabParamList } from "./types";
-import { colors } from "@/theme";
+import { colors, shadow } from "@/theme";
 
 import ExercisesScreen from "@/screens/ExercisesScreen";
 import ExerciseDetailScreen from "@/screens/ExerciseDetailScreen";
@@ -96,7 +96,15 @@ export default function RootNavigator() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+          tabBarStyle: {
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+            height: 62,
+            paddingTop: 8,
+            paddingBottom: 8,
+            ...shadow.md,
+          },
+          tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
         }}

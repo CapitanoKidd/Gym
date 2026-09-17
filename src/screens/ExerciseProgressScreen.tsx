@@ -2,7 +2,7 @@ import React from "react";
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import { useHistoryStore } from "@/store/useHistoryStore";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import LineChart, { ChartPoint } from "@/components/LineChart";
 
 type Props = {
@@ -73,22 +73,23 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.textMuted, fontSize: 14, marginTop: 4, marginBottom: 18 },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: radius.md,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",
+    ...shadow.sm,
   },
   emptyText: { color: colors.textMuted, fontSize: 14, lineHeight: 21, textAlign: "center" },
   statsRow: { flexDirection: "row", gap: 10, marginTop: 14 },
   statBox: {
     flex: 1,
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: radius.sm,
     padding: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    alignItems: "center",
+    ...shadow.sm,
   },
   statLabel: { color: colors.textMuted, fontSize: 11, textAlign: "center" },
   statValue: { color: colors.text, fontSize: 16, fontWeight: "700", marginTop: 4 },

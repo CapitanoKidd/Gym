@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import { exportBackup, importBackup } from "@/utils/backup";
 import { isWorkoutReminderAvailable } from "@/utils/notifications";
 
@@ -84,12 +84,13 @@ const styles = StyleSheet.create({
   paragraph: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginBottom: 20 },
   actionBtn: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 12,
+    ...shadow.sm,
   },
   actionBtnText: { color: colors.text, fontWeight: "600" },
   dangerBtn: { borderColor: colors.danger },
@@ -97,7 +98,7 @@ const styles = StyleSheet.create({
   noticeBox: {
     marginTop: 8,
     backgroundColor: colors.cardAlt,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,

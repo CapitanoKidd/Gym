@@ -4,7 +4,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ExercisesStackParamList } from "@/navigation/types";
 import { useExerciseStore } from "@/store/useExerciseStore";
 import { usePlanStore } from "@/store/usePlanStore";
-import { colors } from "@/theme";
+import { colors, radius, shadow } from "@/theme";
 import MuscleGroupIcon, { MUSCLE_GROUP_COLORS } from "@/components/MuscleGroupIcon";
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, "ExerciseDetail">;
@@ -111,11 +111,12 @@ const styles = StyleSheet.create({
   badge: {
     alignSelf: "flex-start",
     backgroundColor: colors.primary,
-    borderRadius: 20,
+    borderRadius: radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 4,
     marginTop: 8,
     marginBottom: 16,
+    ...shadow.sm,
   },
   badgeText: { color: "#fff", fontWeight: "600", fontSize: 13 },
   sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "700", marginTop: 18, marginBottom: 6 },
@@ -124,18 +125,19 @@ const styles = StyleSheet.create({
   progressBtn: {
     marginTop: 24,
     backgroundColor: colors.cardAlt,
-    borderRadius: 12,
-    paddingVertical: 12,
+    borderRadius: radius.md,
+    paddingVertical: 13,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadow.sm,
   },
   progressBtnText: { color: colors.primary, fontWeight: "700" },
   actions: { flexDirection: "row", gap: 12, marginTop: 14 },
   editBtn: {
     flex: 1,
     backgroundColor: colors.cardAlt,
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingVertical: 12,
     alignItems: "center",
     borderWidth: 1,
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
   deleteBtn: {
     flex: 1,
     backgroundColor: "transparent",
-    borderRadius: 12,
+    borderRadius: radius.md,
     paddingVertical: 12,
     alignItems: "center",
     borderWidth: 1,
