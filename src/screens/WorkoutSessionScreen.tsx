@@ -207,13 +207,14 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
   // aggiunte/rimozioni di sessione), usato come riferimento dai pulsanti +/- serie.
   const currentMemberBaseSets = plan?.exercises.find((e) => e.id === currentMember?.id)?.sets ?? currentMember?.sets ?? 1;
 
-  // Esercizi già svolti + quello attuale, come pagine da scorrere orizzontalmente: la
-  // pagina attuale è sempre l'ultima. Scorrere indietro è solo una consultazione: non
-  // cambia l'esercizio "in corso", che resta quello dei pulsanti/timer in basso.
+  // Tutti gli esercizi della scheda, come pagine da scorrere orizzontalmente: quella
+  // dell'esercizio attuale è "attiva", le altre (prima o dopo, a seconda del verso dello
+  // swipe) sono solo un'anteprima di consultazione — scorrere non cambia mai l'esercizio
+  // "in corso", che resta quello dei pulsanti/timer in basso.
   const { width: windowWidth } = useWindowDimensions();
   const pagerRef = useRef<ScrollView>(null);
-  const reviewPages = overallIndex >= 0 ? effectiveExercises.slice(0, overallIndex + 1) : [];
-  const currentPageIndex = reviewPages.length - 1;
+  const reviewPages = effectiveExercises;
+  const currentPageIndex = overallIndex;
 
   // Ogni volta che l'esercizio "attuale" cambia (nuova serie di un'altra esercizio della
   // superserie, o esercizio successivo), la vista torna a mostrarlo automaticamente.
@@ -330,8 +331,8 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
         <Text style={styles.progress}>
           Esercizio {overallIndex >= 0 ? overallIndex + 1 : "-"} / {overallTotal}
         </Text>
-        {overallIndex > 0 && currentActive.phase === "exercise" && (
-          <Text style={styles.swipeHint}>◀ Scorri per rivedere gli esercizi precedenti</Text>
+        {overallTotal > 1 && currentActive.phase === "exercise" && (
+          <Text style={styles.swipeHint}>◀ Scorri per vedere gli altri esercizi della scheda ▶</Text>
         )}
       </View>
 
@@ -345,7 +346,10 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
           contentOffset={{ x: currentPageIndex * windowWidth, y: 0 }}
         >
           {reviewPages.map((pe, pageIndex) => {
-            const isCurrentPage = pageIndex === currentPageIndex;
+            const pageStatus: "past" | "current" | "future" =
+              pageIndex < currentPageIndex ? "past" : pageIndex === currentPageIndex ? "current" : "future";
+            const isCurrentPage = pageStatus === "current";
+            const isFuturePage = pageStatus === "future";
             const pageExercise = getExerciseById(pe.exerciseId);
             const pageLog = active?.logs[pe.id];
 
@@ -356,7 +360,10 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
                 contentContainerStyle={styles.bodyContent}
                 keyboardShouldPersistTaps="handled"
               >
-                {!isCurrentPage && <Text style={styles.pastPageHint}>Esercizio già svolto — sola consultazione, peso modificabile</Text>}
+                {pageStatus === "past" && (
+                  <Text style={styles.pastPageHint}>Esercizio già svolto — sola consultazione, peso modificabile</Text>
+                )}
+                {isFuturePage && <Text style={styles.pastPageHint}>Esercizio successivo — anteprima, non ancora iniziato</Text>}
 
                 {pageExercise ? (
                   <>
@@ -405,7 +412,14 @@ export default function WorkoutSessionScreen({ route, navigation }: Props) {
                     corrente (solo nella pagina attuale) ha il campo peso in evidenza + il
                     tasto per completarla, quelle future sono solo un'anteprima. */}
                 <View style={styles.setsCard}>
-                  {Array.from({ length: pe.sets }).map((_, round) => {
+                  {isFuturePage
+                    ? Array.from({ length: pe.sets }).map((_, round) => (
+                        <View key={round} style={[styles.setRow, styles.setRowUpcoming]}>
+                          <Text style={styles.setRowLabelMuted}>Serie {round + 1}</Text>
+                          <Text style={styles.setRowMuted}>{pe.reps} rip.</Text>
+                        </View>
+                      ))
+                    : Array.from({ length: pe.sets }).map((_, round) => {
                     const setLog = pageLog?.setLogs[round];
                     const isDone = !isCurrentPage || round < currentActive.round || (round === currentActive.round && setLog?.completed);
                     const isCurrent = isCurrentPage && round === currentActive.round && !setLog?.completed;
