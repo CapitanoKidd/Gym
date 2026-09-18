@@ -3,9 +3,10 @@ import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text } from "react-native";
-import { ExercisesStackParamList, HistoryStackParamList, PlansStackParamList, RootTabParamList } from "./types";
+import { ExercisesStackParamList, HistoryStackParamList, HomeStackParamList, PlansStackParamList, RootTabParamList } from "./types";
 import { colors, shadow } from "@/theme";
 
+import HomeScreen from "@/screens/HomeScreen";
 import ExercisesScreen from "@/screens/ExercisesScreen";
 import ExerciseDetailScreen from "@/screens/ExerciseDetailScreen";
 import AddExerciseScreen from "@/screens/AddExerciseScreen";
@@ -19,6 +20,7 @@ import HistoryDetailScreen from "@/screens/HistoryDetailScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import ExerciseProgressScreen from "@/screens/ExerciseProgressScreen";
 
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const ExercisesStack = createNativeStackNavigator<ExercisesStackParamList>();
 const PlansStack = createNativeStackNavigator<PlansStackParamList>();
 const HistoryStack = createNativeStackNavigator<HistoryStackParamList>();
@@ -30,6 +32,14 @@ const screenOptions = {
   headerShadowVisible: false,
   contentStyle: { backgroundColor: colors.bg },
 };
+
+function HomeStackNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={screenOptions}>
+      <HomeStack.Screen name="HomeMain" component={HomeScreen} options={{ headerShown: false }} />
+    </HomeStack.Navigator>
+  );
+}
 
 function ExercisesStackNavigator() {
   return (
@@ -96,12 +106,12 @@ export default function RootNavigator() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
+          // Niente altezza/padding fissi qui: la tab bar calcola da sola lo spazio in più
+          // da lasciare sopra la barra di navigazione del telefono (gesture bar/pulsanti),
+          // un valore fisso lo sovrascriverebbe facendo sovrapporre i tab a quella barra.
           tabBarStyle: {
             backgroundColor: colors.card,
             borderTopColor: colors.border,
-            height: 62,
-            paddingTop: 8,
-            paddingBottom: 8,
             ...shadow.md,
           },
           tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
@@ -110,9 +120,9 @@ export default function RootNavigator() {
         }}
       >
         <Tab.Screen
-          name="Esercizi"
-          component={ExercisesStackNavigator}
-          options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏋️</Text> }}
+          name="Home"
+          component={HomeStackNavigator}
+          options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏠</Text> }}
         />
         <Tab.Screen
           name="Schede"
@@ -123,6 +133,11 @@ export default function RootNavigator() {
           name="Storico"
           component={HistoryStackNavigator}
           options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📈</Text> }}
+        />
+        <Tab.Screen
+          name="Esercizi"
+          component={ExercisesStackNavigator}
+          options={{ tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏋️</Text> }}
         />
       </Tab.Navigator>
     </NavigationContainer>

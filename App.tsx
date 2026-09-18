@@ -2,6 +2,7 @@ import "react-native-gesture-handler";
 import React from "react";
 import { LogBox } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import RootNavigator from "@/navigation/RootNavigator";
 
 // Avviso innocuo generato internamente da react-native-draggable-flatlist (dipendenza
@@ -11,9 +12,9 @@ LogBox.ignoreLogs(["InteractionManager has been deprecated"]);
 
 export default function App() {
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="light" />
       <RootNavigator />
-    </>
+    </SafeAreaProvider>
   );
 }

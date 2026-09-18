@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { colors, radius, shadow } from "@/theme";
 import { exportBackup, importBackup } from "@/utils/backup";
 import { isWorkoutReminderAvailable } from "@/utils/notifications";
+import { useProfileStore } from "@/store/useProfileStore";
 
 export default function SettingsScreen() {
   const [busy, setBusy] = useState(false);
+  const { name, setName } = useProfileStore();
 
   const handleExport = async () => {
     setBusy(true);
@@ -47,7 +49,17 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
-      <Text style={styles.sectionTitle}>Backup dati</Text>
+      <Text style={styles.sectionTitle}>Il tuo nome</Text>
+      <Text style={styles.paragraph}>Usato solo per il saluto nella home. Lascialo vuoto se preferisci.</Text>
+      <TextInput
+        style={styles.nameInput}
+        value={name}
+        onChangeText={setName}
+        placeholder="Es. Renato"
+        placeholderTextColor={colors.textMuted}
+      />
+
+      <Text style={[styles.sectionTitle, { marginTop: 28 }]}>Backup dati</Text>
       <Text style={styles.paragraph}>
         Tutti i dati (esercizi, schede e storico allenamenti) vivono solo su questo telefono. Esporta un backup
         di tanto in tanto per non perderli se disinstalli l'app o cambi dispositivo.
@@ -82,6 +94,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   sectionTitle: { color: colors.text, fontSize: 18, fontWeight: "700", marginBottom: 8 },
   paragraph: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginBottom: 20 },
+  nameInput: {
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 8,
+  },
   actionBtn: {
     backgroundColor: colors.card,
     borderRadius: radius.md,

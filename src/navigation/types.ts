@@ -1,3 +1,7 @@
+export type HomeStackParamList = {
+  HomeMain: undefined;
+};
+
 export type ExercisesStackParamList = {
   ExercisesList: undefined;
   ExerciseDetail: { exerciseId: string };
@@ -22,7 +26,8 @@ export type HistoryStackParamList = {
 };
 
 export type RootTabParamList = {
-  Esercizi: undefined;
+  Home: undefined;
   Schede: undefined;
   Storico: undefined;
+  Esercizi: undefined;
 };
