@@ -18,11 +18,19 @@ function greetingForHour(hour: number): string {
   return "Buonasera";
 }
 
+function startOfDay(ts: number): number {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
 function timeAgo(ts: number): string {
-  const diffMs = Date.now() - ts;
-  const diffDays = Math.floor(diffMs / 86400000);
+  // Confronto per giorno di calendario, non per ore trascorse: un allenamento fatto ieri
+  // alle 22 e "oggi" alle 7 del mattino sono passate solo 9 ore, ma sono comunque due
+  // giorni di calendario diversi — altrimenti risulterebbe "oggi" per errore.
+  const diffDays = Math.round((startOfDay(Date.now()) - startOfDay(ts)) / 86400000);
   if (diffDays <= 0) {
-    const diffHours = Math.floor(diffMs / 3600000);
+    const diffHours = Math.floor((Date.now() - ts) / 3600000);
     return diffHours < 1 ? "poco fa" : "oggi";
   }
   if (diffDays === 1) return "ieri";
